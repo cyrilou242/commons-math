@@ -99,8 +99,6 @@ public class BOBYQAOptimizer
      * calculated objective function values.
      */
     private ArrayRealVector currentBest;
-    /** Differences between the upper and lower bounds. */
-    private double[] boundDifference;
     /**
      * Index of the interpolation point at the trust region center.
      */
@@ -237,107 +235,48 @@ public class BOBYQAOptimizer
         this.stoppingTrustRegionRadius = stoppingTrustRegionRadius;
     }
 
+    // This subroutine seeks the least value of a function of many variables,
+    // by applying a trust region method that forms quadratic models by
+    // interpolation. There is usually some freedom in the interpolation
+    // conditions, which is taken up by minimizing the Frobenius norm of
+    // the change to the second derivative of the model, beginning with the
+    // zero matrix. The values of the variables are constrained by upper and
+    // lower bounds. The arguments of the subroutine are as follows.
+    //
+    // N must be set to the number of variables and must be at least two.
+    // NPT is the number of interpolation conditions. Its value must be in
+    //   the interval [N+2,(N+1)(N+2)/2]. Choices that exceed 2*N+1 are not
+    //   recommended.
+    // Initial values of the variables must be set in X(1),X(2),...,X(N). They
+    //   will be changed to the values that give the least calculated F.
+    // For I=1,2,...,N, XL(I) and XU(I) must provide the lower and upper
+    //   bounds, respectively, on X(I). The construction of quadratic models
+    //   requires XL(I) to be strictly less than XU(I) for each I. Further,
+    //   the contribution to a model from changes to the I-th variable is
+    //   damaged severely by rounding errors if XU(I)-XL(I) is too small.
+    // RHOBEG and RHOEND must be set to the initial and final values of a trust
+    //   region radius, so both must be positive with RHOEND no greater than
+    //   RHOBEG. Typically, RHOBEG should be about one tenth of the greatest
+    //   expected change to a variable, while RHOEND should indicate the
+    //   accuracy that is required in the final values of the variables. An
+    //   error return occurs if any of the differences XU(I)-XL(I), I=1,...,N,
+    //   is less than 2*RHOBEG.
+    // MAXFUN must be set to an upper bound on the number of calls of CALFUN.
+    // The array W will be used for working space. Its length must be at least
+    //   (NPT+5)*(NPT+N)+3*N*(N+5)/2.
     /** {@inheritDoc} */
     @Override
     protected PointValuePair doOptimize() {
         final double[] lowerBound = getLowerBound();
         final double[] upperBound = getUpperBound();
 
-        // Validity checks.
-        setup(lowerBound, upperBound);
+        init(lowerBound, upperBound);
 
-        isMinimize = (getGoalType() == GoalType.MINIMIZE);
-        currentBest = new ArrayRealVector(getStartPoint());
-
-        final double value = bobyqa(lowerBound, upperBound);
+        final double optimum = bobyqb(lowerBound, upperBound);
 
         return new PointValuePair(currentBest.getDataRef(),
-                                  isMinimize ? value : -value);
+                                  isMinimize ? optimum : -optimum);
     }
-
-    /**
-     *     This subroutine seeks the least value of a function of many variables,
-     *     by applying a trust region method that forms quadratic models by
-     *     interpolation. There is usually some freedom in the interpolation
-     *     conditions, which is taken up by minimizing the Frobenius norm of
-     *     the change to the second derivative of the model, beginning with the
-     *     zero matrix. The values of the variables are constrained by upper and
-     *     lower bounds. The arguments of the subroutine are as follows.
-     *
-     *     N must be set to the number of variables and must be at least two.
-     *     NPT is the number of interpolation conditions. Its value must be in
-     *       the interval [N+2,(N+1)(N+2)/2]. Choices that exceed 2*N+1 are not
-     *       recommended.
-     *     Initial values of the variables must be set in X(1),X(2),...,X(N). They
-     *       will be changed to the values that give the least calculated F.
-     *     For I=1,2,...,N, XL(I) and XU(I) must provide the lower and upper
-     *       bounds, respectively, on X(I). The construction of quadratic models
-     *       requires XL(I) to be strictly less than XU(I) for each I. Further,
-     *       the contribution to a model from changes to the I-th variable is
-     *       damaged severely by rounding errors if XU(I)-XL(I) is too small.
-     *     RHOBEG and RHOEND must be set to the initial and final values of a trust
-     *       region radius, so both must be positive with RHOEND no greater than
-     *       RHOBEG. Typically, RHOBEG should be about one tenth of the greatest
-     *       expected change to a variable, while RHOEND should indicate the
-     *       accuracy that is required in the final values of the variables. An
-     *       error return occurs if any of the differences XU(I)-XL(I), I=1,...,N,
-     *       is less than 2*RHOBEG.
-     *     MAXFUN must be set to an upper bound on the number of calls of CALFUN.
-     *     The array W will be used for working space. Its length must be at least
-     *       (NPT+5)*(NPT+N)+3*N*(N+5)/2.
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     * @return the value of the objective at the optimum.
-     */
-    private double bobyqa(double[] lowerBound,
-                          double[] upperBound) {
-
-        final int n = currentBest.getDimension();
-
-        // Return if there is insufficient space between the bounds. Modify the
-        // initial X if necessary in order to avoid conflicts between the bounds
-        // and the construction of the first quadratic model. The lower and upper
-        // bounds on moves from the updated X are set now, in the ISL and ISU
-        // partitions of W, in order to provide useful and exact information about
-        // components of X that become within distance RHOBEG from their bounds.
-
-        for (int j = 0; j < n; j++) {
-            final double boundDiff = boundDifference[j];
-            lowerDifference.setEntry(j, lowerBound[j] - currentBest.getEntry(j));
-            upperDifference.setEntry(j, upperBound[j] - currentBest.getEntry(j));
-            if (lowerDifference.getEntry(j) >= -initialTrustRegionRadius) {
-                if (lowerDifference.getEntry(j) >= ZERO) {
-                    currentBest.setEntry(j, lowerBound[j]);
-                    lowerDifference.setEntry(j, ZERO);
-                    upperDifference.setEntry(j, boundDiff);
-                } else {
-                    currentBest.setEntry(j, lowerBound[j] + initialTrustRegionRadius);
-                    lowerDifference.setEntry(j, -initialTrustRegionRadius);
-                    // Computing MAX
-                    final double deltaOne = upperBound[j] - currentBest.getEntry(j);
-                    upperDifference.setEntry(j, JdkMath.max(deltaOne, initialTrustRegionRadius));
-                }
-            } else if (upperDifference.getEntry(j) <= initialTrustRegionRadius) {
-                if (upperDifference.getEntry(j) <= ZERO) {
-                    currentBest.setEntry(j, upperBound[j]);
-                    lowerDifference.setEntry(j, -boundDiff);
-                    upperDifference.setEntry(j, ZERO);
-                } else {
-                    currentBest.setEntry(j, upperBound[j] - initialTrustRegionRadius);
-                    // Computing MIN
-                    final double deltaOne = lowerBound[j] - currentBest.getEntry(j);
-                    final double deltaTwo = -initialTrustRegionRadius;
-                    lowerDifference.setEntry(j, JdkMath.min(deltaOne, deltaTwo));
-                    upperDifference.setEntry(j, initialTrustRegionRadius);
-                }
-            }
-        }
-
-        // Make the call of BOBYQB.
-
-        return bobyqb(lowerBound, upperBound);
-    } // bobyqa
 
     // ----------------------------------------------------------------------------------------
 
@@ -2330,42 +2269,27 @@ public class BOBYQAOptimizer
     } // update
 
     /**
-     * Performs validity checks.
+     * Performs validity checks and initializes fields.
      *
      * @param lowerBound Lower bounds (constraints) of the objective variables.
      * @param upperBound Upperer bounds (constraints) of the objective variables.
      */
-    private void setup(double[] lowerBound,
-                       double[] upperBound) {
-
-        final double[] init = getStartPoint();
-        final int dimension = init.length;
+    private void init(final double[] lowerBound, final double[] upperBound) {
+        final int dimension = lowerBound.length;
 
         // Check problem dimension.
         if (dimension < MINIMUM_PROBLEM_DIMENSION) {
             throw new NumberIsTooSmallException(dimension, MINIMUM_PROBLEM_DIMENSION, true);
         }
-        // Check number of interpolation points.
-        final int[] nPointsInterval = { dimension + 2, (dimension + 2) * (dimension + 1) / 2 };
-        if (numberOfInterpolationPoints < nPointsInterval[0] ||
-            numberOfInterpolationPoints > nPointsInterval[1]) {
+        // Check number of interpolation points
+        final int minInterpolationPoints = dimension + 2;
+        final int maxInterpolationPoints = (dimension + 2) * (dimension + 1) / 2;
+        if (numberOfInterpolationPoints < minInterpolationPoints ||
+            numberOfInterpolationPoints > maxInterpolationPoints) {
             throw new OutOfRangeException(LocalizedFormats.NUMBER_OF_INTERPOLATION_POINTS,
                                           numberOfInterpolationPoints,
-                                          nPointsInterval[0],
-                                          nPointsInterval[1]);
-        }
-
-        // Initialize bound differences.
-        boundDifference = new double[dimension];
-
-        final double requiredMinDiff = 2 * initialTrustRegionRadius;
-        double minDiff = Double.POSITIVE_INFINITY;
-        for (int i = 0; i < dimension; i++) {
-            boundDifference[i] = upperBound[i] - lowerBound[i];
-            minDiff = JdkMath.min(minDiff, boundDifference[i]);
-        }
-        if (minDiff < requiredMinDiff) {
-            initialTrustRegionRadius = minDiff / 3.0;
+                                          minInterpolationPoints,
+                                          maxInterpolationPoints);
         }
 
         // Initialize the data structures used by the "bobyqa" method.
@@ -2387,6 +2311,57 @@ public class BOBYQAOptimizer
         trialStepPoint = new ArrayRealVector(dimension);
         lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
         modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
+
+        isMinimize = (getGoalType() == GoalType.MINIMIZE);
+        currentBest = new ArrayRealVector(getStartPoint());
+
+        // Initialize bound differences: differences between the upper and lower bounds.
+        final RealVector boundDifference = new ArrayRealVector(dimension);
+        for (int i = 0; i < dimension; i++) {
+            boundDifference.setEntry(i,upperBound[i] - lowerBound[i]);
+        }
+        final double requiredMinDiff = 2 * initialTrustRegionRadius;
+        final double minDiff = boundDifference.getMinValue();
+        if (minDiff < requiredMinDiff) {
+            initialTrustRegionRadius = minDiff / 3.0;
+        }
+
+        // Modify the initial starting point if necessary in order to avoid conflicts between the
+        // bounds and the construction of the first quadratic model. The lower and upper
+        // bounds on moves from the updated X are set now, in the ISL and ISU
+        // partitions of W, in order to provide useful and exact information about
+        // components of X that become within distance RHOBEG from their bounds.
+        for (int j = 0; j < dimension; j++) {
+            final double boundDiff = boundDifference.getEntry(j);
+            lowerDifference.setEntry(j, lowerBound[j] - currentBest.getEntry(j));
+            upperDifference.setEntry(j, upperBound[j] - currentBest.getEntry(j));
+            if (lowerDifference.getEntry(j) >= -initialTrustRegionRadius) {
+                if (lowerDifference.getEntry(j) >= ZERO) {
+                    currentBest.setEntry(j, lowerBound[j]);
+                    lowerDifference.setEntry(j, ZERO);
+                    upperDifference.setEntry(j, boundDiff);
+                } else {
+                    currentBest.setEntry(j, lowerBound[j] + initialTrustRegionRadius);
+                    lowerDifference.setEntry(j, -initialTrustRegionRadius);
+                    // Computing MAX
+                    final double deltaOne = upperBound[j] - currentBest.getEntry(j);
+                    upperDifference.setEntry(j, JdkMath.max(deltaOne, initialTrustRegionRadius));
+                }
+            } else if (upperDifference.getEntry(j) <= initialTrustRegionRadius) {
+                if (upperDifference.getEntry(j) <= ZERO) {
+                    currentBest.setEntry(j, upperBound[j]);
+                    lowerDifference.setEntry(j, -boundDiff);
+                    upperDifference.setEntry(j, ZERO);
+                } else {
+                    currentBest.setEntry(j, upperBound[j] - initialTrustRegionRadius);
+                    // Computing MIN
+                    final double deltaOne = lowerBound[j] - currentBest.getEntry(j);
+                    final double deltaTwo = -initialTrustRegionRadius;
+                    lowerDifference.setEntry(j, JdkMath.min(deltaOne, deltaTwo));
+                    upperDifference.setEntry(j, initialTrustRegionRadius);
+                }
+            }
+        }
     }
 }
 //CHECKSTYLE: resume all
