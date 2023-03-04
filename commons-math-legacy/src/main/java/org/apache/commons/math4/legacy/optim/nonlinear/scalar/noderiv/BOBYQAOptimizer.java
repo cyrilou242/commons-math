@@ -1246,36 +1246,22 @@ public class BOBYQAOptimizer
      * @return { alpha, cauchy }
      */
     private double[] altmov(
-            int knew,
-            double adelt
+            final int knew,
+            final double adelt
     ) {
-
         final int n = currentBest.getDimension();
+
         final int npt = numberOfInterpolationPoints;
-
-        final ArrayRealVector glag = new ArrayRealVector(n);
         final ArrayRealVector hcol = new ArrayRealVector(npt);
-
-        final ArrayRealVector work1 = new ArrayRealVector(n);
-        final ArrayRealVector work2 = new ArrayRealVector(n);
-
-        for (int k = 0; k < npt; k++) {
-            hcol.setEntry(k, ZERO);
-        }
         for (int j = 0, max = npt - n - 1; j < max; j++) {
             final double tmp = zMatrix.getEntry(knew, j);
             for (int k = 0; k < npt; k++) {
                 hcol.setEntry(k, hcol.getEntry(k) + tmp * zMatrix.getEntry(k, j));
             }
         }
-        final double alpha = hcol.getEntry(knew);
-        final double ha = HALF * alpha;
 
         // Calculate the gradient of the KNEW-th Lagrange function at XOPT.
-
-        for (int i = 0; i < n; i++) {
-            glag.setEntry(i, bMatrix.getEntry(knew, i));
-        }
+        final RealVector glag = bMatrix.getRowVector(knew);
         for (int k = 0; k < npt; k++) {
             double tmp = ZERO;
             for (int j = 0; j < n; j++) {
@@ -1298,6 +1284,8 @@ public class BOBYQAOptimizer
         int ksav = 0;
         int ibdsav = 0;
         double stpsav = 0;
+        final double alpha = hcol.getEntry(knew);
+        final double halfAlpha = HALF * alpha;
         for (int k = 0; k < npt; k++) {
             if (k == trustRegionCenterInterpolationPointIndex) {
                 continue;
@@ -1391,7 +1379,7 @@ public class BOBYQAOptimizer
             // Calculate PREDSQ for the current line search and maintain PRESAV.
 
             final double tmp = step * (ONE - step) * distsq;
-            final double predsq = vlag * vlag * (vlag * vlag + ha * tmp * tmp);
+            final double predsq = vlag * vlag * (vlag * vlag + halfAlpha * tmp * tmp);
             if (predsq > presav) {
                 presav = predsq;
                 ksav = k;
@@ -1422,6 +1410,8 @@ public class BOBYQAOptimizer
         int iflag = 0;
         double cauchy = Double.NaN;
         double csave = ZERO;
+        final ArrayRealVector work1 = new ArrayRealVector(n);
+        final ArrayRealVector work2 = new ArrayRealVector(n);
         while (true) {
             double wfixsq = ZERO;
             double ggfree = ZERO;
