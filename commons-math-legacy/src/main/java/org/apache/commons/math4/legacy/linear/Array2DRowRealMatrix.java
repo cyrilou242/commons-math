@@ -299,8 +299,14 @@ public class Array2DRowRealMatrix extends AbstractRealMatrix implements Serializ
     @Override
     public double getEntry(final int row, final int column)
         throws OutOfRangeException {
-        MatrixUtils.checkMatrixIndex(this, row, column);
-        return data[row][column];
+        try {
+            return data[row][column];
+        } catch (IndexOutOfBoundsException e) {
+            // these checks will throw a detailed exception
+            MatrixUtils.checkMatrixIndex(this, row, column);
+            // this should not happen
+            throw e;
+        }
     }
 
     /** {@inheritDoc} */
