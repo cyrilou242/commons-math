@@ -292,7 +292,6 @@ public class BOBYQAOptimizer
      */
     private double bobyqa(double[] lowerBound,
                           double[] upperBound) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
 
@@ -381,7 +380,6 @@ public class BOBYQAOptimizer
      */
     private double bobyqb(double[] lowerBound,
                           double[] upperBound) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
@@ -451,7 +449,6 @@ public class BOBYQAOptimizer
         for(;;) {
         switch (state) {
         case 20: {
-            printState(20); // XXX
             if (trustRegionCenterInterpolationPointIndex != kbase) {
                 int ih = 0;
                 for (int j = 0; j < n; j++) {
@@ -474,7 +471,6 @@ public class BOBYQAOptimizer
                             gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
                         }
                     }
-                    // throw new PathIsExploredException(); // XXX
                 }
             }
 
@@ -486,7 +482,6 @@ public class BOBYQAOptimizer
             // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
         }
         case 60: {
-            printState(60); // XXX
             final ArrayRealVector gnew = new ArrayRealVector(n);
             final ArrayRealVector xbdi = new ArrayRealVector(n);
             final ArrayRealVector s = new ArrayRealVector(n);
@@ -545,7 +540,6 @@ public class BOBYQAOptimizer
                         if (bdtest < bdtol) {
                             state = 650; break;
                         }
-                        // throw new PathIsExploredException(); // XXX
                     }
                 }
                 state = 680; break;
@@ -559,7 +553,6 @@ public class BOBYQAOptimizer
             // that do not depend on ZMAT. VLAG is used temporarily for working space.
         }
         case 90: {
-            printState(90); // XXX
             if (dsq <= xoptsq * ONE_OVER_A_THOUSAND) {
                 final double fracsq = xoptsq * ONE_OVER_FOUR;
                 double sumpq = ZERO;
@@ -663,7 +656,6 @@ public class BOBYQAOptimizer
             // useful safeguard, but is not invoked in most applications of BOBYQA.
         }
         case 210: {
-            printState(210); // XXX
             // Pick two alternative vectors of variables, relative to XBASE, that
             // are suitable as new positions of the KNEW-th interpolation point.
             // Firstly, XNEW is set to the point on a line through XOPT and another
@@ -688,7 +680,6 @@ public class BOBYQAOptimizer
             // use when VQUAD is calculated.
         }
         case 230: {
-            printState(230); // XXX
             for (int k = 0; k < npt; k++) {
                 double suma = ZERO;
                 double sumb = ZERO;
@@ -809,7 +800,6 @@ public class BOBYQAOptimizer
             //   the limit on the number of calculations of F has been reached.
         }
         case 360: {
-            printState(360); // XXX
             for (int i = 0; i < n; i++) {
                 // Computing MIN
                 // Computing MAX
@@ -1119,7 +1109,6 @@ public class BOBYQAOptimizer
             distsq = JdkMath.max(d1 * d1, d2 * d2);
         }
         case 650: {
-            printState(650); // XXX
             knew = -1;
             for (int k = 0; k < npt; k++) {
                 double sum = ZERO;
@@ -1171,7 +1160,6 @@ public class BOBYQAOptimizer
             //   next values of RHO and DELTA.
         }
         case 680: {
-            printState(680); // XXX
             if (rho > stoppingTrustRegionRadius) {
                 delta = HALF * rho;
                 ratio = rho / stoppingTrustRegionRadius;
@@ -1196,7 +1184,6 @@ public class BOBYQAOptimizer
             }
         }
         case 720: {
-            printState(720); // XXX
             if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
                 for (int i = 0; i < n; i++) {
                     // Computing MIN
@@ -1262,7 +1249,6 @@ public class BOBYQAOptimizer
             int knew,
             double adelt
     ) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
@@ -1583,7 +1569,6 @@ public class BOBYQAOptimizer
      */
     private void prelim(double[] lowerBound,
                         double[] upperBound) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
@@ -1635,7 +1620,6 @@ public class BOBYQAOptimizer
                     stepa = initialTrustRegionRadius;
                     if (upperDifference.getEntry(nfmm) == ZERO) {
                         stepa = -stepa;
-                        // throw new PathIsExploredException(); // XXX
                     }
                     interpolationPoints.setEntry(nfm, nfmm, stepa);
                 } else if (nfm > n) {
@@ -1643,11 +1627,9 @@ public class BOBYQAOptimizer
                     stepb = -initialTrustRegionRadius;
                     if (lowerDifference.getEntry(nfxm) == ZERO) {
                         stepb = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(nfxm));
-                        // throw new PathIsExploredException(); // XXX
                     }
                     if (upperDifference.getEntry(nfxm) == ZERO) {
                         stepb = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(nfxm));
-                        // throw new PathIsExploredException(); // XXX
                     }
                     interpolationPoints.setEntry(nfm, nfxm, stepb);
                 }
@@ -1659,7 +1641,6 @@ public class BOBYQAOptimizer
                     final int tmp2 = jpt;
                     jpt = ipt - n;
                     ipt = tmp2;
-//                     throw new PathIsExploredException(); // XXX
                 }
                 final int iptMinus1 = ipt - 1;
                 final int jptMinus1 = jpt - 1;
@@ -1709,7 +1690,6 @@ public class BOBYQAOptimizer
                         bMatrix.setEntry(0, nfmm, -oneOverStepA);
                         bMatrix.setEntry(nfm, nfmm, oneOverStepA);
                         bMatrix.setEntry(npt + nfmm, nfmm, -HALF * rhosq);
-                        // throw new PathIsExploredException(); // XXX
                     }
                 } else if (numEval >= n + 2) {
                     final int ih = nfx * (nfx + 1) / 2 - 1;
@@ -1748,7 +1728,6 @@ public class BOBYQAOptimizer
                 final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
                 final double tmp = interpolationPoints.getEntry(nfm, ipt - 1) * interpolationPoints.getEntry(nfm, jpt - 1);
                 modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
-//                 throw new PathIsExploredException(); // XXX
             }
         } while (getEvaluations() < npt);
     } // prelim
@@ -1809,7 +1788,6 @@ public class BOBYQAOptimizer
             ArrayRealVector hs,
             ArrayRealVector hred
     ) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
@@ -1876,11 +1854,9 @@ public class BOBYQAOptimizer
         for(;;) {
             switch (state) {
         case 20: {
-            printState(20); // XXX
             beta = ZERO;
         }
         case 30: {
-            printState(30); // XXX
             stepsq = ZERO;
             for (int i = 0; i < n; i++) {
                 if (xbdi.getEntry(i) != ZERO) {
@@ -1913,7 +1889,6 @@ public class BOBYQAOptimizer
             state = 210; break;
         }
         case 50: {
-            printState(50); // XXX
             resid = delsq;
             ds = ZERO;
             shs = ZERO;
@@ -2021,7 +1996,6 @@ public class BOBYQAOptimizer
             }
         }
         case 90: {
-            printState(90); // XXX
             crvmin = ZERO;
 
             // Prepare for the alternative iteration by calculating some scalars
@@ -2029,7 +2003,6 @@ public class BOBYQAOptimizer
             // Q, where S holds the reduced D in the call of GGMULT.
         }
         case 100: {
-            printState(100); // XXX
             if (nact >= n - 1) {
                 state = 190; break;
             }
@@ -2056,7 +2029,6 @@ public class BOBYQAOptimizer
             // and the reduced G that is orthogonal to the reduced D.
         }
         case 120: {
-            printState(120); // XXX
             ++iterc;
             temp = gredsq * dredsq - dredg * dredg;
             if (temp <= qred * 1e-4 * qred) {
@@ -2127,7 +2099,6 @@ public class BOBYQAOptimizer
             state = 210; break;
         }
         case 150: {
-            printState(150); // XXX
             shs = ZERO;
             dhs = ZERO;
             dhd = ZERO;
@@ -2212,7 +2183,6 @@ public class BOBYQAOptimizer
             }
         }
         case 190: {
-            printState(190); // XXX
             dsq = ZERO;
             for (int i = 0; i < n; i++) {
                 // Computing MAX
@@ -2238,7 +2208,6 @@ public class BOBYQAOptimizer
             // they can be regarded as an external subroutine.
         }
         case 210: {
-            printState(210); // XXX
             int ih = 0;
             for (int j = 0; j < n; j++) {
                 hs.setEntry(j, ZERO);
@@ -2295,7 +2264,6 @@ public class BOBYQAOptimizer
             double denom,
             int knew
     ) {
-        printMethod(); // XXX
 
         final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
@@ -2379,9 +2347,8 @@ public class BOBYQAOptimizer
      */
     private void setup(double[] lowerBound,
                        double[] upperBound) {
-        printMethod(); // XXX
 
-        double[] init = getStartPoint();
+        final double[] init = getStartPoint();
         final int dimension = init.length;
 
         // Check problem dimension.
@@ -2401,7 +2368,7 @@ public class BOBYQAOptimizer
         // Initialize bound differences.
         boundDifference = new double[dimension];
 
-        double requiredMinDiff = 2 * initialTrustRegionRadius;
+        final double requiredMinDiff = 2 * initialTrustRegionRadius;
         double minDiff = Double.POSITIVE_INFINITY;
         for (int i = 0; i < dimension; i++) {
             boundDifference[i] = upperBound[i] - lowerBound[i];
@@ -2430,39 +2397,6 @@ public class BOBYQAOptimizer
         trialStepPoint = new ArrayRealVector(dimension);
         lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
         modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
-    }
-
-    // XXX utility for figuring out call sequence.
-    private static String caller(int n) {
-        final Throwable t = new Throwable();
-        final StackTraceElement[] elements = t.getStackTrace();
-        final StackTraceElement e = elements[n];
-        return e.getMethodName() + " (at line " + e.getLineNumber() + ")";
-    }
-    // XXX utility for figuring out call sequence.
-    private static void printState(int s) {
-        //        System.out.println(caller(2) + ": state " + s);
-    }
-    // XXX utility for figuring out call sequence.
-    private static void printMethod() {
-        //        System.out.println(caller(2));
-    }
-
-    /**
-     * Marker for code paths that are not explored with the current unit tests.
-     * If the path becomes explored, it should just be removed from the code.
-     */
-    private static class PathIsExploredException extends RuntimeException {
-        /** Serializable UID. */
-        private static final long serialVersionUID = 745350979634801853L;
-
-        /** Message string. */
-        private static final String PATH_IS_EXPLORED
-            = "If this exception is thrown, just remove it from the code";
-
-        PathIsExploredException() {
-            super(PATH_IS_EXPLORED + " " + BOBYQAOptimizer.caller(3));
-        }
     }
 }
 //CHECKSTYLE: resume all
