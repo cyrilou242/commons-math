@@ -2231,12 +2231,6 @@ public class BOBYQAOptimizer
                 currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBound[i],
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
                     upperBound[i]));
-                if (interpolationPoints.getEntry(j, i) == lowerDifference.getEntry(i)) {
-                    currentBest.setEntry(i, lowerBound[i]);
-                }
-                if (interpolationPoints.getEntry(j, i) == upperDifference.getEntry(i)) {
-                    currentBest.setEntry(i, upperBound[i]);
-                }
             }
 
             final double objectiveValue = computeObjectiveValue(currentBest.toArray());
