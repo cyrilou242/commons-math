@@ -2303,8 +2303,6 @@ public class BOBYQAOptimizer
         fAtInterpolationPoints = new ArrayRealVector(numberOfInterpolationPoints);
         trustRegionCenterOffset = new ArrayRealVector(dimension);
         gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
-        lowerDifference = new ArrayRealVector(dimension);
-        upperDifference = new ArrayRealVector(dimension);
         modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
         newPoint = new ArrayRealVector(dimension);
         alternativeNewPoint = new ArrayRealVector(dimension);
@@ -2325,43 +2323,25 @@ public class BOBYQAOptimizer
         if (minDiff < requiredMinDiff) {
             initialTrustRegionRadius = minDiff / 3.0;
         }
-
         // Modify the initial starting point if necessary in order to avoid conflicts between the
-        // bounds and the construction of the first quadratic model. The lower and upper
-        // bounds on moves from the updated X are set now, in the ISL and ISU
-        // partitions of W, in order to provide useful and exact information about
-        // components of X that become within distance RHOBEG from their bounds.
-        for (int j = 0; j < dimension; j++) {
-            final double boundDiff = boundDifference.getEntry(j);
-            lowerDifference.setEntry(j, lowerBound[j] - currentBest.getEntry(j));
-            upperDifference.setEntry(j, upperBound[j] - currentBest.getEntry(j));
-            if (lowerDifference.getEntry(j) >= -initialTrustRegionRadius) {
-                if (lowerDifference.getEntry(j) >= ZERO) {
-                    currentBest.setEntry(j, lowerBound[j]);
-                    lowerDifference.setEntry(j, ZERO);
-                    upperDifference.setEntry(j, boundDiff);
-                } else {
-                    currentBest.setEntry(j, lowerBound[j] + initialTrustRegionRadius);
-                    lowerDifference.setEntry(j, -initialTrustRegionRadius);
-                    // Computing MAX
-                    final double deltaOne = upperBound[j] - currentBest.getEntry(j);
-                    upperDifference.setEntry(j, JdkMath.max(deltaOne, initialTrustRegionRadius));
-                }
-            } else if (upperDifference.getEntry(j) <= initialTrustRegionRadius) {
-                if (upperDifference.getEntry(j) <= ZERO) {
-                    currentBest.setEntry(j, upperBound[j]);
-                    lowerDifference.setEntry(j, -boundDiff);
-                    upperDifference.setEntry(j, ZERO);
-                } else {
-                    currentBest.setEntry(j, upperBound[j] - initialTrustRegionRadius);
-                    // Computing MIN
-                    final double deltaOne = lowerBound[j] - currentBest.getEntry(j);
-                    final double deltaTwo = -initialTrustRegionRadius;
-                    lowerDifference.setEntry(j, JdkMath.min(deltaOne, deltaTwo));
-                    upperDifference.setEntry(j, initialTrustRegionRadius);
-                }
+        // bounds and the construction of the first quadratic model.
+        for (int i = 0; i < dimension; i++) {
+            final double xi = currentBest.getEntry(i);
+            if (xi <= lowerBound[i]) {
+                currentBest.setEntry(i, lowerBound[i]);
+            } else if (xi < lowerBound[i] + initialTrustRegionRadius) {
+                currentBest.setEntry(i, lowerBound[i] + initialTrustRegionRadius);
+            } else if (xi >= upperBound[i]) {
+                currentBest.setEntry(i, upperBound[i]);
+            } else if (xi > upperBound[i] - initialTrustRegionRadius) {
+                currentBest.setEntry(i, upperBound[i] - initialTrustRegionRadius);
             }
         }
+        // The lower and upper bounds on moves from the updated X are set now, in the ISL and ISU
+        // partitions of W, in order to provide useful and exact information about
+        // components of X that become within distance RHOBEG from their bounds.
+        lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
+        upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
     }
 }
 //CHECKSTYLE: resume all
