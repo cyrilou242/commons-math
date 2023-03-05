@@ -271,6 +271,13 @@ public class BOBYQAOptimizer
         final double[] upperBound = getUpperBound();
 
         init(lowerBound, upperBound);
+        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
+        // BMAT and ZMAT for the first iteration, with the corresponding values of
+        // NF and KOPT, which are the number of calls of CALFUN so far and the
+        // index of the interpolation point at the trust region centre. Then the
+        // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
+        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
+        prelim(lowerBound, upperBound);
 
         final double optimum = bobyqb(lowerBound, upperBound);
 
@@ -320,7 +327,7 @@ public class BOBYQAOptimizer
      */
     private double bobyqb(final double[] lowerBound,
                           final double[] upperBound) {
-
+        // Set some constants.
         final int n = currentBest.getDimension();
         final int np = n + 1;
         final int nptm = numberOfInterpolationPoints - np;
@@ -334,21 +341,7 @@ public class BOBYQAOptimizer
         double alpha = Double.NaN;
         double dsq = Double.NaN;
 
-        // Set some constants.
         // Parameter adjustments
-
-        // Function Body
-
-        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
-        // BMAT and ZMAT for the first iteration, with the corresponding values of
-        // of NF and KOPT, which are the number of calls of CALFUN so far and the
-        // index of the interpolation point at the trust region centre. Then the
-        // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
-        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
-
-        trustRegionCenterInterpolationPointIndex = 0;
-
-        prelim(lowerBound, upperBound);
         double xoptsq = ZERO;
         for (int i = 0; i < n; i++) {
             trustRegionCenterOffset.setEntry(i, interpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex, i));
@@ -1477,193 +1470,6 @@ public class BOBYQAOptimizer
     // ----------------------------------------------------------------------------------------
 
     /**
-     *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
-     *     BMAT and ZMAT for the first iteration, and it maintains the values of
-     *     NF and KOPT. The vector X is also changed by PRELIM.
-     *
-     *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
-     *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
-     *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
-     *       are the same as the corresponding arguments in BOBYQB, the elements
-     *       of SL and SU being set in BOBYQA.
-     *     GOPT is usually the gradient of the quadratic model at XOPT+XBASE, but
-     *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
-     *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
-     *     NF is maintaned as the number of calls of CALFUN so far.
-     *     KOPT will be such that the least calculated value of F so far is at
-     *       the point XPT(KOPT,.)+XBASE in the space of the variables.
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     */
-    private void prelim(final double[] lowerBound,
-                        final double[] upperBound) {
-
-        final int n = currentBest.getDimension();
-        final int ndim = bMatrix.getRowDimension();
-
-        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
-        final double recip = 1d / rhosq;
-        final int np = n + 1;
-
-        // Set XBASE to the initial vector of variables, and set the initial
-        // elements of XPT, BMAT, HQ, PQ and ZMAT to zero.
-
-        for (int j = 0; j < n; j++) {
-            originShift.setEntry(j, currentBest.getEntry(j));
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                interpolationPoints.setEntry(k, j, ZERO);
-            }
-            for (int i = 0; i < ndim; i++) {
-                bMatrix.setEntry(i, j, ZERO);
-            }
-        }
-        for (int i = 0, max = n * np / 2; i < max; i++) {
-            modelSecondDerivativesValues.setEntry(i, ZERO);
-        }
-        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-            modelSecondDerivativesParameters.setEntry(k, ZERO);
-            for (int j = 0, max = numberOfInterpolationPoints - np; j < max; j++) {
-                zMatrix.setEntry(k, j, ZERO);
-            }
-        }
-
-        // Begin the initialization procedure. NF becomes one more than the number
-        // of function values so far. The coordinates of the displacement of the
-        // next initial interpolation point from XBASE are set in XPT(NF+1,.).
-
-        int ipt = 0;
-        int jpt = 0;
-        double fbeg = Double.NaN;
-        do {
-            final int nfm = getEvaluations();
-            final int nfx = nfm - n;
-            final int nfmm = nfm - 1;
-            final int nfxm = nfx - 1;
-            double stepa = 0;
-            double stepb = 0;
-            if (nfm <= 2 * n) {
-                if (nfm >= 1 &&
-                    nfm <= n) {
-                    stepa = initialTrustRegionRadius;
-                    if (upperDifference.getEntry(nfmm) == ZERO) {
-                        stepa = -stepa;
-                    }
-                    interpolationPoints.setEntry(nfm, nfmm, stepa);
-                } else if (nfm > n) {
-                    stepa = interpolationPoints.getEntry(nfx, nfxm);
-                    stepb = -initialTrustRegionRadius;
-                    if (lowerDifference.getEntry(nfxm) == ZERO) {
-                        stepb = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(nfxm));
-                    }
-                    if (upperDifference.getEntry(nfxm) == ZERO) {
-                        stepb = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(nfxm));
-                    }
-                    interpolationPoints.setEntry(nfm, nfxm, stepb);
-                }
-            } else {
-                final int tmp1 = (nfm - np) / n;
-                jpt = nfm - tmp1 * n - n;
-                ipt = jpt + tmp1;
-                if (ipt > n) {
-                    final int tmp2 = jpt;
-                    jpt = ipt - n;
-                    ipt = tmp2;
-                }
-                final int iptMinus1 = ipt - 1;
-                final int jptMinus1 = jpt - 1;
-                interpolationPoints.setEntry(nfm, iptMinus1, interpolationPoints.getEntry(ipt, iptMinus1));
-                interpolationPoints.setEntry(nfm, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
-            }
-
-            // Calculate the next value of F. The least function value so far and
-            // its index are required.
-
-            for (int j = 0; j < n; j++) {
-                currentBest.setEntry(j, JdkMath.min(JdkMath.max(lowerBound[j],
-                                                                  originShift.getEntry(j) + interpolationPoints.getEntry(nfm, j)),
-                                                     upperBound[j]));
-                if (interpolationPoints.getEntry(nfm, j) == lowerDifference.getEntry(j)) {
-                    currentBest.setEntry(j, lowerBound[j]);
-                }
-                if (interpolationPoints.getEntry(nfm, j) == upperDifference.getEntry(j)) {
-                    currentBest.setEntry(j, upperBound[j]);
-                }
-            }
-
-            final double objectiveValue = computeObjectiveValue(currentBest.toArray());
-            final double f = isMinimize ? objectiveValue : -objectiveValue;
-            final int numEval = getEvaluations(); // nfm + 1
-            fAtInterpolationPoints.setEntry(nfm, f);
-
-            if (numEval == 1) {
-                fbeg = f;
-                trustRegionCenterInterpolationPointIndex = 0;
-            } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
-                trustRegionCenterInterpolationPointIndex = nfm;
-            }
-
-            // Set the nonzero initial elements of BMAT and the quadratic model in the
-            // cases when NF is at most 2*N+1. If NF exceeds N+1, then the positions
-            // of the NF-th and (NF-N)-th interpolation points may be switched, in
-            // order that the function value at the first of them contributes to the
-            // off-diagonal second derivative terms of the initial quadratic model.
-
-            if (numEval <= 2 * n + 1) {
-                if (numEval >= 2 &&
-                    numEval <= n + 1) {
-                    gradientAtTrustRegionCenter.setEntry(nfmm, (f - fbeg) / stepa);
-                    if (numberOfInterpolationPoints < numEval + n) {
-                        final double oneOverStepA = ONE / stepa;
-                        bMatrix.setEntry(0, nfmm, -oneOverStepA);
-                        bMatrix.setEntry(nfm, nfmm, oneOverStepA);
-                        bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
-                    }
-                } else if (numEval >= n + 2) {
-                    final int ih = nfx * (nfx + 1) / 2 - 1;
-                    final double tmp = (f - fbeg) / stepb;
-                    final double diff = stepb - stepa;
-                    modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(nfxm)) / diff);
-                    gradientAtTrustRegionCenter.setEntry(nfxm, (gradientAtTrustRegionCenter.getEntry(nfxm) * stepb - tmp * stepa) / diff);
-                    if (stepa * stepb < ZERO && f < fAtInterpolationPoints.getEntry(nfm - n)) {
-                        fAtInterpolationPoints.setEntry(nfm, fAtInterpolationPoints.getEntry(nfm - n));
-                        fAtInterpolationPoints.setEntry(nfm - n, f);
-                        if (trustRegionCenterInterpolationPointIndex == nfm) {
-                            trustRegionCenterInterpolationPointIndex = nfm - n;
-                        }
-                        interpolationPoints.setEntry(nfm - n, nfxm, stepb);
-                        interpolationPoints.setEntry(nfm, nfxm, stepa);
-                    }
-                    bMatrix.setEntry(0, nfxm, -(stepa + stepb) / (stepa * stepb));
-                    bMatrix.setEntry(nfm, nfxm, -HALF / interpolationPoints.getEntry(nfm - n, nfxm));
-                    bMatrix.setEntry(nfm - n, nfxm,
-                                  -bMatrix.getEntry(0, nfxm) - bMatrix.getEntry(nfm, nfxm));
-                    zMatrix.setEntry(0, nfxm, JdkMath.sqrt(TWO) / (stepa * stepb));
-                    zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) / rhosq);
-                    // zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) * recip); // XXX "testAckley" and "testDiffPow" fail.
-                    zMatrix.setEntry(nfm - n, nfxm,
-                                  -zMatrix.getEntry(0, nfxm) - zMatrix.getEntry(nfm, nfxm));
-                }
-
-                // Set the off-diagonal second derivatives of the Lagrange functions and
-                // the initial quadratic model.
-            } else {
-                zMatrix.setEntry(0, nfxm, recip);
-                zMatrix.setEntry(nfm, nfxm, recip);
-                zMatrix.setEntry(ipt, nfxm, -recip);
-                zMatrix.setEntry(jpt, nfxm, -recip);
-
-                final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
-                final double tmp = interpolationPoints.getEntry(nfm, ipt - 1) * interpolationPoints.getEntry(nfm, jpt - 1);
-                modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
-            }
-        } while (getEvaluations() < numberOfInterpolationPoints);
-    } // prelim
-
-
-    // ----------------------------------------------------------------------------------------
-
-    /**
      *     A version of the truncated conjugate gradient is applied. If a line
      *     search is restricted by a constraint, then the procedure is restarted,
      *     the values of the variables that are at their bounds being fixed. If
@@ -2342,5 +2148,189 @@ public class BOBYQAOptimizer
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
     }
+
+
+    /**
+     *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
+     *     BMAT and ZMAT for the first iteration, and it maintains the values of
+     *     NF and KOPT. The vector X is also changed by PRELIM.
+     *
+     *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
+     *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
+     *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
+     *       are the same as the corresponding arguments in BOBYQB, the elements
+     *       of SL and SU being set in BOBYQA.
+     *     GOPT is usually the gradient of the quadratic model at XOPT+XBASE, but
+     *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
+     *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
+     *     NF is maintaned as the number of calls of CALFUN so far.
+     *     KOPT will be such that the least calculated value of F so far is at
+     *       the point XPT(KOPT,.)+XBASE in the space of the variables.
+     *
+     * @param lowerBound Lower bounds.
+     * @param upperBound Upper bounds.
+     */
+    private void prelim(final double[] lowerBound,
+        final double[] upperBound) {
+        final int n = currentBest.getDimension();
+        final int ndim = bMatrix.getRowDimension();
+
+        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
+        final double recip = 1d / rhosq;
+        final int np = n + 1;
+
+        // Set XBASE to the initial vector of variables, and set the initial
+        // elements of XPT, BMAT, HQ, PQ and ZMAT to zero.
+        for (int j = 0; j < n; j++) {
+            originShift.setEntry(j, currentBest.getEntry(j));
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
+                interpolationPoints.setEntry(k, j, ZERO);
+            }
+            for (int i = 0; i < ndim; i++) {
+                bMatrix.setEntry(i, j, ZERO);
+            }
+        }
+        for (int i = 0, max = n * np / 2; i < max; i++) {
+            modelSecondDerivativesValues.setEntry(i, ZERO);
+        }
+        for (int k = 0; k < numberOfInterpolationPoints; k++) {
+            modelSecondDerivativesParameters.setEntry(k, ZERO);
+            for (int j = 0, max = numberOfInterpolationPoints - np; j < max; j++) {
+                zMatrix.setEntry(k, j, ZERO);
+            }
+        }
+
+        // Begin the initialization procedure. NF becomes one more than the number
+        // of function values so far. The coordinates of the displacement of the
+        // next initial interpolation point from XBASE are set in XPT(NF+1,.).
+
+        int ipt = 0;
+        int jpt = 0;
+        double fbeg = Double.NaN;
+        trustRegionCenterInterpolationPointIndex = 0;
+        do {
+            final int nfm = getEvaluations();
+            final int nfx = nfm - n;
+            final int nfmm = nfm - 1;
+            final int nfxm = nfx - 1;
+            double stepa = 0;
+            double stepb = 0;
+            if (nfm <= 2 * n) {
+                if (nfm >= 1 &&
+                    nfm <= n) {
+                    stepa = initialTrustRegionRadius;
+                    if (upperDifference.getEntry(nfmm) == ZERO) {
+                        stepa = -stepa;
+                    }
+                    interpolationPoints.setEntry(nfm, nfmm, stepa);
+                } else if (nfm > n) {
+                    stepa = interpolationPoints.getEntry(nfx, nfxm);
+                    stepb = -initialTrustRegionRadius;
+                    if (lowerDifference.getEntry(nfxm) == ZERO) {
+                        stepb = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(nfxm));
+                    }
+                    if (upperDifference.getEntry(nfxm) == ZERO) {
+                        stepb = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(nfxm));
+                    }
+                    interpolationPoints.setEntry(nfm, nfxm, stepb);
+                }
+            } else {
+                final int tmp1 = (nfm - np) / n;
+                jpt = nfm - tmp1 * n - n;
+                ipt = jpt + tmp1;
+                if (ipt > n) {
+                    final int tmp2 = jpt;
+                    jpt = ipt - n;
+                    ipt = tmp2;
+                }
+                final int iptMinus1 = ipt - 1;
+                final int jptMinus1 = jpt - 1;
+                interpolationPoints.setEntry(nfm, iptMinus1, interpolationPoints.getEntry(ipt, iptMinus1));
+                interpolationPoints.setEntry(nfm, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
+            }
+
+            // Calculate the next value of F. The least function value so far and
+            // its index are required.
+
+            for (int j = 0; j < n; j++) {
+                currentBest.setEntry(j, JdkMath.min(JdkMath.max(lowerBound[j],
+                        originShift.getEntry(j) + interpolationPoints.getEntry(nfm, j)),
+                    upperBound[j]));
+                if (interpolationPoints.getEntry(nfm, j) == lowerDifference.getEntry(j)) {
+                    currentBest.setEntry(j, lowerBound[j]);
+                }
+                if (interpolationPoints.getEntry(nfm, j) == upperDifference.getEntry(j)) {
+                    currentBest.setEntry(j, upperBound[j]);
+                }
+            }
+
+            final double objectiveValue = computeObjectiveValue(currentBest.toArray());
+            final double f = isMinimize ? objectiveValue : -objectiveValue;
+            final int numEval = getEvaluations(); // nfm + 1
+            fAtInterpolationPoints.setEntry(nfm, f);
+
+            if (numEval == 1) {
+                fbeg = f;
+                trustRegionCenterInterpolationPointIndex = 0;
+            } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
+                trustRegionCenterInterpolationPointIndex = nfm;
+            }
+
+            // Set the nonzero initial elements of BMAT and the quadratic model in the
+            // cases when NF is at most 2*N+1. If NF exceeds N+1, then the positions
+            // of the NF-th and (NF-N)-th interpolation points may be switched, in
+            // order that the function value at the first of them contributes to the
+            // off-diagonal second derivative terms of the initial quadratic model.
+
+            if (numEval <= 2 * n + 1) {
+                if (numEval >= 2 &&
+                    numEval <= n + 1) {
+                    gradientAtTrustRegionCenter.setEntry(nfmm, (f - fbeg) / stepa);
+                    if (numberOfInterpolationPoints < numEval + n) {
+                        final double oneOverStepA = ONE / stepa;
+                        bMatrix.setEntry(0, nfmm, -oneOverStepA);
+                        bMatrix.setEntry(nfm, nfmm, oneOverStepA);
+                        bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
+                    }
+                } else if (numEval >= n + 2) {
+                    final int ih = nfx * (nfx + 1) / 2 - 1;
+                    final double tmp = (f - fbeg) / stepb;
+                    final double diff = stepb - stepa;
+                    modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(nfxm)) / diff);
+                    gradientAtTrustRegionCenter.setEntry(nfxm, (gradientAtTrustRegionCenter.getEntry(nfxm) * stepb - tmp * stepa) / diff);
+                    if (stepa * stepb < ZERO && f < fAtInterpolationPoints.getEntry(nfm - n)) {
+                        fAtInterpolationPoints.setEntry(nfm, fAtInterpolationPoints.getEntry(nfm - n));
+                        fAtInterpolationPoints.setEntry(nfm - n, f);
+                        if (trustRegionCenterInterpolationPointIndex == nfm) {
+                            trustRegionCenterInterpolationPointIndex = nfm - n;
+                        }
+                        interpolationPoints.setEntry(nfm - n, nfxm, stepb);
+                        interpolationPoints.setEntry(nfm, nfxm, stepa);
+                    }
+                    bMatrix.setEntry(0, nfxm, -(stepa + stepb) / (stepa * stepb));
+                    bMatrix.setEntry(nfm, nfxm, -HALF / interpolationPoints.getEntry(nfm - n, nfxm));
+                    bMatrix.setEntry(nfm - n, nfxm,
+                        -bMatrix.getEntry(0, nfxm) - bMatrix.getEntry(nfm, nfxm));
+                    zMatrix.setEntry(0, nfxm, JdkMath.sqrt(TWO) / (stepa * stepb));
+                    zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) / rhosq);
+                    // zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) * recip); // XXX "testAckley" and "testDiffPow" fail.
+                    zMatrix.setEntry(nfm - n, nfxm,
+                        -zMatrix.getEntry(0, nfxm) - zMatrix.getEntry(nfm, nfxm));
+                }
+
+                // Set the off-diagonal second derivatives of the Lagrange functions and
+                // the initial quadratic model.
+            } else {
+                zMatrix.setEntry(0, nfxm, recip);
+                zMatrix.setEntry(nfm, nfxm, recip);
+                zMatrix.setEntry(ipt, nfxm, -recip);
+                zMatrix.setEntry(jpt, nfxm, -recip);
+
+                final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
+                final double tmp = interpolationPoints.getEntry(nfm, ipt - 1) * interpolationPoints.getEntry(nfm, jpt - 1);
+                modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
+            }
+        } while (getEvaluations() < numberOfInterpolationPoints);
+    } // prelim
 }
 //CHECKSTYLE: resume all
