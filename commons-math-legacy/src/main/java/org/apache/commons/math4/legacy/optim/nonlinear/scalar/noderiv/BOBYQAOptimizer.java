@@ -271,13 +271,6 @@ public class BOBYQAOptimizer
         final double[] upperBound = getUpperBound();
 
         init(lowerBound, upperBound);
-        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
-        // BMAT and ZMAT for the first iteration, with the corresponding values of
-        // NF and KOPT, which are the number of calls of CALFUN so far and the
-        // index of the interpolation point at the trust region centre. Then the
-        // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
-        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
-        prelim(lowerBound, upperBound);
 
         final double optimum = bobyqb(lowerBound, upperBound);
 
@@ -2147,6 +2140,14 @@ public class BOBYQAOptimizer
         // components of X that become within distance RHOBEG from their bounds.
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
+
+        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
+        // BMAT and ZMAT for the first iteration, with the corresponding values of
+        // NF and KOPT, which are the number of calls of CALFUN so far and the
+        // index of the interpolation point at the trust region centre. Then the
+        // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
+        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
+        prelim(lowerBound, upperBound);
     }
 
 
