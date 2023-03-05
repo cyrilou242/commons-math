@@ -2149,13 +2149,16 @@ public class BOBYQAOptimizer
         // in interpolationPoints(NF+1,.).
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         final double recip = 1d / rhosq;
-        double fbeg = Double.NaN;
-        trustRegionCenterInterpolationPointIndex = 0;
 
         // construct a matrix as defined in (2.2)
-        for (int j = 0; j < numberOfInterpolationPoints; j++) {
+        // first row
+        final double fbeg = computeF(currentBest);;
+        trustRegionCenterInterpolationPointIndex = 0;
+        fAtInterpolationPoints.setEntry(0, fbeg);
+
+        for (int j = 1; j < numberOfInterpolationPoints; j++) {
             if (j <= 2 * dimension) {
-                if (j >= 1 && j <= dimension) {
+                if (j <= dimension) {
                     double stepA = initialTrustRegionRadius;
                     if (upperDifference.getEntry(j - 1) == ZERO) {
                         stepA = -stepA;
@@ -2196,10 +2199,7 @@ public class BOBYQAOptimizer
             final double f = computeF(currentBest);
 
             fAtInterpolationPoints.setEntry(j, f);
-            if (j == 0) {
-                fbeg = f;
-                trustRegionCenterInterpolationPointIndex = 0;
-            } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
+            if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
                 trustRegionCenterInterpolationPointIndex = j;
             }
 
@@ -2229,10 +2229,10 @@ public class BOBYQAOptimizer
 
         // Set the nonzero initial elements of BMAT and the quadratic model in the
         // cases when NF is at most 2*N+1.
-        for (int j = 0; j < numberOfInterpolationPoints; j++) {
+        for (int j = 1; j < numberOfInterpolationPoints; j++) {
             final double f = fAtInterpolationPoints.getEntry(j);
             if (j <= 2 * dimension) {
-                if (j >= 1 && j <= dimension) {
+                if (j <= dimension) {
                     double stepA = interpolationPoints.getEntry(j, j -1);
                     gradientAtTrustRegionCenter.setEntry(j - 1, (f - fbeg) / stepA);
                     if (numberOfInterpolationPoints < j + dimension + 1) {
