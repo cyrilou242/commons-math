@@ -2182,22 +2182,22 @@ public class BOBYQAOptimizer
         int jpt = 0;
         double fbeg = Double.NaN;
         trustRegionCenterInterpolationPointIndex = 0;
-        do {
-            final int nfm = getEvaluations();
-            final int nfx = nfm - dimension;
-            final int nfmm = nfm - 1;
+
+        for(int j = 0; j < numberOfInterpolationPoints; j++) {
+            final int nfx = j - dimension;
+            final int nfmm = j - 1;
             final int nfxm = nfx - 1;
             double stepa = 0;
             double stepb = 0;
-            if (nfm <= 2 * dimension) {
-                if (nfm >= 1 &&
-                    nfm <= dimension) {
+            if (j <= 2 * dimension) {
+                if (j >= 1 &&
+                    j <= dimension) {
                     stepa = initialTrustRegionRadius;
                     if (upperDifference.getEntry(nfmm) == ZERO) {
                         stepa = -stepa;
                     }
-                    interpolationPoints.setEntry(nfm, nfmm, stepa);
-                } else if (nfm > dimension) {
+                    interpolationPoints.setEntry(j, nfmm, stepa);
+                } else if (j > dimension) {
                     stepa = interpolationPoints.getEntry(nfx, nfxm);
                     stepb = -initialTrustRegionRadius;
                     if (lowerDifference.getEntry(nfxm) == ZERO) {
@@ -2206,11 +2206,11 @@ public class BOBYQAOptimizer
                     if (upperDifference.getEntry(nfxm) == ZERO) {
                         stepb = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(nfxm));
                     }
-                    interpolationPoints.setEntry(nfm, nfxm, stepb);
+                    interpolationPoints.setEntry(j, nfxm, stepb);
                 }
             } else {
-                final int tmp1 = (nfm - np) / dimension;
-                jpt = nfm - tmp1 * dimension - dimension;
+                final int tmp1 = (j - np) / dimension;
+                jpt = j - tmp1 * dimension - dimension;
                 ipt = jpt + tmp1;
                 if (ipt > dimension) {
                     final int tmp2 = jpt;
@@ -2219,35 +2219,37 @@ public class BOBYQAOptimizer
                 }
                 final int iptMinus1 = ipt - 1;
                 final int jptMinus1 = jpt - 1;
-                interpolationPoints.setEntry(nfm, iptMinus1, interpolationPoints.getEntry(ipt, iptMinus1));
-                interpolationPoints.setEntry(nfm, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
+                interpolationPoints.setEntry(
+                    j, iptMinus1, interpolationPoints.getEntry(ipt, iptMinus1));
+                interpolationPoints.setEntry(
+                    j, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
             }
 
             // Calculate the next value of F. The least function value so far and
             // its index are required.
 
-            for (int j = 0; j < dimension; j++) {
-                currentBest.setEntry(j, JdkMath.min(JdkMath.max(lowerBound[j],
-                        originShift.getEntry(j) + interpolationPoints.getEntry(nfm, j)),
-                    upperBound[j]));
-                if (interpolationPoints.getEntry(nfm, j) == lowerDifference.getEntry(j)) {
-                    currentBest.setEntry(j, lowerBound[j]);
+            for (int i = 0; i < dimension; i++) {
+                currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBound[i],
+                        originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
+                    upperBound[i]));
+                if (interpolationPoints.getEntry(j, i) == lowerDifference.getEntry(i)) {
+                    currentBest.setEntry(i, lowerBound[i]);
                 }
-                if (interpolationPoints.getEntry(nfm, j) == upperDifference.getEntry(j)) {
-                    currentBest.setEntry(j, upperBound[j]);
+                if (interpolationPoints.getEntry(j, i) == upperDifference.getEntry(i)) {
+                    currentBest.setEntry(i, upperBound[i]);
                 }
             }
 
             final double objectiveValue = computeObjectiveValue(currentBest.toArray());
             final double f = isMinimize ? objectiveValue : -objectiveValue;
-            final int numEval = getEvaluations(); // nfm + 1
-            fAtInterpolationPoints.setEntry(nfm, f);
+            fAtInterpolationPoints.setEntry(j, f);
 
+            final int numEval = getEvaluations(); // nfm + 1
             if (numEval == 1) {
                 fbeg = f;
                 trustRegionCenterInterpolationPointIndex = 0;
             } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
-                trustRegionCenterInterpolationPointIndex = nfm;
+                trustRegionCenterInterpolationPointIndex = j;
             }
 
             // Set the nonzero initial elements of BMAT and the quadratic model in the
@@ -2263,7 +2265,7 @@ public class BOBYQAOptimizer
                     if (numberOfInterpolationPoints < numEval + dimension) {
                         final double oneOverStepA = ONE / stepa;
                         bMatrix.setEntry(0, nfmm, -oneOverStepA);
-                        bMatrix.setEntry(nfm, nfmm, oneOverStepA);
+                        bMatrix.setEntry(j, nfmm, oneOverStepA);
                         bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
                     }
                 } else if (numEval >= dimension + 2) {
@@ -2272,39 +2274,41 @@ public class BOBYQAOptimizer
                     final double diff = stepb - stepa;
                     modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(nfxm)) / diff);
                     gradientAtTrustRegionCenter.setEntry(nfxm, (gradientAtTrustRegionCenter.getEntry(nfxm) * stepb - tmp * stepa) / diff);
-                    if (stepa * stepb < ZERO && f < fAtInterpolationPoints.getEntry(nfm - dimension)) {
-                        fAtInterpolationPoints.setEntry(nfm, fAtInterpolationPoints.getEntry(nfm - dimension));
-                        fAtInterpolationPoints.setEntry(nfm - dimension, f);
-                        if (trustRegionCenterInterpolationPointIndex == nfm) {
-                            trustRegionCenterInterpolationPointIndex = nfm - dimension;
+                    if (stepa * stepb < ZERO && f < fAtInterpolationPoints.getEntry(j - dimension)) {
+                        fAtInterpolationPoints.setEntry(j, fAtInterpolationPoints.getEntry(j - dimension));
+                        fAtInterpolationPoints.setEntry(j - dimension, f);
+                        if (trustRegionCenterInterpolationPointIndex == j) {
+                            trustRegionCenterInterpolationPointIndex = j - dimension;
                         }
-                        interpolationPoints.setEntry(nfm - dimension, nfxm, stepb);
-                        interpolationPoints.setEntry(nfm, nfxm, stepa);
+                        interpolationPoints.setEntry(j - dimension, nfxm, stepb);
+                        interpolationPoints.setEntry(j, nfxm, stepa);
                     }
                     bMatrix.setEntry(0, nfxm, -(stepa + stepb) / (stepa * stepb));
-                    bMatrix.setEntry(nfm, nfxm, -HALF / interpolationPoints.getEntry(nfm - dimension, nfxm));
-                    bMatrix.setEntry(nfm - dimension, nfxm,
-                        -bMatrix.getEntry(0, nfxm) - bMatrix.getEntry(nfm, nfxm));
+                    bMatrix.setEntry(
+                        j, nfxm, -HALF / interpolationPoints.getEntry(j - dimension, nfxm));
+                    bMatrix.setEntry(j - dimension, nfxm,
+                        -bMatrix.getEntry(0, nfxm) - bMatrix.getEntry(j, nfxm));
                     zMatrix.setEntry(0, nfxm, JdkMath.sqrt(TWO) / (stepa * stepb));
-                    zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) / rhosq);
+                    zMatrix.setEntry(j, nfxm, JdkMath.sqrt(HALF) / rhosq);
                     // zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) * recip); // XXX "testAckley" and "testDiffPow" fail.
-                    zMatrix.setEntry(nfm - dimension, nfxm,
-                        -zMatrix.getEntry(0, nfxm) - zMatrix.getEntry(nfm, nfxm));
+                    zMatrix.setEntry(j - dimension, nfxm,
+                        -zMatrix.getEntry(0, nfxm) - zMatrix.getEntry(j, nfxm));
                 }
 
                 // Set the off-diagonal second derivatives of the Lagrange functions and
                 // the initial quadratic model.
             } else {
                 zMatrix.setEntry(0, nfxm, recip);
-                zMatrix.setEntry(nfm, nfxm, recip);
+                zMatrix.setEntry(j, nfxm, recip);
                 zMatrix.setEntry(ipt, nfxm, -recip);
                 zMatrix.setEntry(jpt, nfxm, -recip);
 
                 final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
-                final double tmp = interpolationPoints.getEntry(nfm, ipt - 1) * interpolationPoints.getEntry(nfm, jpt - 1);
+                final double tmp = interpolationPoints.getEntry(j, ipt - 1) * interpolationPoints.getEntry(
+                    j, jpt - 1);
                 modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
             }
-        } while (getEvaluations() < numberOfInterpolationPoints);
+        }
     }
 
     // prelim
