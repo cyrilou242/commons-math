@@ -724,19 +724,9 @@ public class BOBYQAOptimizer
         }
         case 360: {
             for (int i = 0; i < n; i++) {
-                // Computing MIN
-                // Computing MAX
-                final double d3 = lowerBound[i];
-                final double d4 = originShift.getEntry(i) + newPoint.getEntry(i);
-                final double d1 = JdkMath.max(d3, d4);
-                final double d2 = upperBound[i];
-                currentBest.setEntry(i, JdkMath.min(d1, d2));
-                if (newPoint.getEntry(i) == lowerDifference.getEntry(i)) {
-                    currentBest.setEntry(i, lowerBound[i]);
-                }
-                if (newPoint.getEntry(i) == upperDifference.getEntry(i)) {
-                    currentBest.setEntry(i, upperBound[i]);
-                }
+                final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
+                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
+                currentBest.setEntry(i, boundedNewBest);
             }
 
             f = computeObjectiveValue(currentBest.toArray());
@@ -1110,19 +1100,9 @@ public class BOBYQAOptimizer
         case 720: {
             if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
                 for (int i = 0; i < n; i++) {
-                    // Computing MIN
-                    // Computing MAX
-                    final double d3 = lowerBound[i];
-                    final double d4 = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
-                    final double d1 = JdkMath.max(d3, d4);
-                    final double d2 = upperBound[i];
-                    currentBest.setEntry(i, JdkMath.min(d1, d2));
-                    if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
-                        currentBest.setEntry(i, lowerBound[i]);
-                    }
-                    if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
-                        currentBest.setEntry(i, upperBound[i]);
-                    }
+                    final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
+                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
+                    currentBest.setEntry(i, boundedNewBest);
                 }
                 f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
             }
