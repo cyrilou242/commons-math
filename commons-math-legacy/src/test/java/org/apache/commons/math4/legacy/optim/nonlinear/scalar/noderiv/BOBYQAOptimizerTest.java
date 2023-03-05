@@ -256,6 +256,19 @@ public class BOBYQAOptimizerTest {
         }
     }
 
+    // TODO see above - simple test to keep the additionalInterpolationPoint code path case tested
+    //  can be removed once above test is added back
+    @Test
+    public void testRosenWithAdditionalInterpolationPoints() {
+        final int dim = 12;
+        double[] startPoint = OptimTestUtils.point(dim, 0.1);
+        double[][] boundaries = null;
+        PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
+        doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
+            GoalType.MINIMIZE,
+            1e-13, 1e-6, 3000,  10, expected, "");
+    }
+
     /**
      * @param func Function to optimize.
      * @param startPoint Starting point.
