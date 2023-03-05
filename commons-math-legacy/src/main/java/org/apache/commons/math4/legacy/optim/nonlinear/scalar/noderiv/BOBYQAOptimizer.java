@@ -2224,7 +2224,6 @@ public class BOBYQAOptimizer
                 interpolationPoints.setEntry(
                     j, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
             }
-
             // Calculate the next value of F. The least function value so far and
             // its index are required.
 
@@ -2244,8 +2243,7 @@ public class BOBYQAOptimizer
             final double f = isMinimize ? objectiveValue : -objectiveValue;
             fAtInterpolationPoints.setEntry(j, f);
 
-            final int numEval = getEvaluations(); // nfm + 1
-            if (numEval == 1) {
+            if (j == 0) {
                 fbeg = f;
                 trustRegionCenterInterpolationPointIndex = 0;
             } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
@@ -2258,17 +2256,16 @@ public class BOBYQAOptimizer
             // order that the function value at the first of them contributes to the
             // off-diagonal second derivative terms of the initial quadratic model.
 
-            if (numEval <= 2 * dimension + 1) {
-                if (numEval >= 2 &&
-                    numEval <= dimension + 1) {
+            if (j <= 2 * dimension) {
+                if (j >= 1 && j <= dimension) {
                     gradientAtTrustRegionCenter.setEntry(nfmm, (f - fbeg) / stepa);
-                    if (numberOfInterpolationPoints < numEval + dimension) {
+                    if (numberOfInterpolationPoints < j + dimension + 1) {
                         final double oneOverStepA = ONE / stepa;
                         bMatrix.setEntry(0, nfmm, -oneOverStepA);
                         bMatrix.setEntry(j, nfmm, oneOverStepA);
                         bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
                     }
-                } else if (numEval >= dimension + 2) {
+                } else if (j >= dimension + 1) {
                     final int ih = nfx * (nfx + 1) / 2 - 1;
                     final double tmp = (f - fbeg) / stepb;
                     final double diff = stepb - stepa;
