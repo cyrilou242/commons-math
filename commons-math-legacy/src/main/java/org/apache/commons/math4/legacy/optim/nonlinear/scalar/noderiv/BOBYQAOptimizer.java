@@ -91,8 +91,6 @@ public class BOBYQAOptimizer
      * stoppingTrustRegionRadius XXX.
      */
     private final double stoppingTrustRegionRadius;
-    /** Goal type (minimize or maximize). */
-    private boolean isMinimize;
     /**
      * Current best values for the variables to be optimized.
      * The vector will be changed in-place to contain the values of the least
@@ -273,7 +271,7 @@ public class BOBYQAOptimizer
         final double optimum = bobyqb(lowerBound, upperBound);
 
         return new PointValuePair(currentBest.getDataRef(),
-                                  isMinimize ? optimum : -optimum);
+            (getGoalType().equals(GoalType.MINIMIZE)) ? optimum : -optimum);
     }
 
     // ----------------------------------------------------------------------------------------
@@ -728,10 +726,7 @@ public class BOBYQAOptimizer
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
                 currentBest.setEntry(i, boundedNewBest);
             }
-            f = computeObjectiveValue(currentBest.toArray());
-            if (!isMinimize) {
-                f = -f;
-            }
+            f = computeF(currentBest);
 
             if (ntrits == -1) {
                 fsave = f;
@@ -2078,8 +2073,6 @@ public class BOBYQAOptimizer
         trialStepPoint = new ArrayRealVector(dimension);
         lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
 
-        isMinimize = (getGoalType() == GoalType.MINIMIZE);
-
         // Initialize bound differences: differences between the upper and lower bounds.
         final RealVector boundDifference = new ArrayRealVector(dimension);
         for (int i = 0; i < dimension; i++) {
@@ -2200,8 +2193,7 @@ public class BOBYQAOptimizer
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
                     upperBound[i]));
             }
-            final double objectiveValue = computeObjectiveValue(currentBest.toArray());
-            final double f = isMinimize ? objectiveValue : -objectiveValue;
+            final double f = computeF(currentBest);
 
             fAtInterpolationPoints.setEntry(j, f);
             if (j == 0) {
@@ -2297,6 +2289,11 @@ public class BOBYQAOptimizer
                 modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
             }
         }
+    }
+
+    private double computeF(final RealVector point) {
+        final double objectiveValue = computeObjectiveValue(point.toArray());
+        return getGoalType().equals(GoalType.MINIMIZE) ? objectiveValue : -objectiveValue;
     }
 
     // prelim
