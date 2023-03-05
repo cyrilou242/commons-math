@@ -318,8 +318,8 @@ public class BOBYQAOptimizer
      * @param upperBound Upper bounds.
      * @return the value of the objective at the optimum.
      */
-    private double bobyqb(double[] lowerBound,
-                          double[] upperBound) {
+    private double bobyqb(final double[] lowerBound,
+                          final double[] upperBound) {
 
         final int n = currentBest.getDimension();
         final int np = n + 1;
@@ -1496,8 +1496,8 @@ public class BOBYQAOptimizer
      * @param lowerBound Lower bounds.
      * @param upperBound Upper bounds.
      */
-    private void prelim(double[] lowerBound,
-                        double[] upperBound) {
+    private void prelim(final double[] lowerBound,
+                        final double[] upperBound) {
 
         final int n = currentBest.getDimension();
         final int ndim = bMatrix.getRowDimension();
@@ -1709,12 +1709,12 @@ public class BOBYQAOptimizer
      * @return { dsq, crvmin }
      */
     private double[] trsbox(
-            double delta,
-            ArrayRealVector gnew,
-            ArrayRealVector xbdi,
-            ArrayRealVector s,
-            ArrayRealVector hs,
-            ArrayRealVector hred
+            final double delta,
+            final ArrayRealVector gnew,
+            final ArrayRealVector xbdi,
+            final ArrayRealVector s,
+            final ArrayRealVector hs,
+            final ArrayRealVector hred
     ) {
 
         final int n = currentBest.getDimension();
@@ -2188,9 +2188,9 @@ public class BOBYQAOptimizer
      * @param knew
      */
     private void update(
-            double beta,
-            double denom,
-            int knew
+            final double beta,
+            final double denom,
+            final int knew
     ) {
 
         final int n = currentBest.getDimension();
