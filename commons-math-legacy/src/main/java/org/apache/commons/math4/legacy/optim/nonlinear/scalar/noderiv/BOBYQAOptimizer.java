@@ -2295,7 +2295,5 @@ public class BOBYQAOptimizer
         final double objectiveValue = computeObjectiveValue(point.toArray());
         return getGoalType().equals(GoalType.MINIMIZE) ? objectiveValue : -objectiveValue;
     }
-
-    // prelim
 }
 //CHECKSTYLE: resume all
