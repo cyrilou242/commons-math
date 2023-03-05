@@ -2210,13 +2210,15 @@ public class BOBYQAOptimizer
             } else if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
                 trustRegionCenterInterpolationPointIndex = j;
             }
+        }
 
-            // Set the nonzero initial elements of BMAT and the quadratic model in the
-            // cases when NF is at most 2*N+1. If NF exceeds N+1, then the positions
-            // of the NF-th and (NF-N)-th interpolation points may be switched, in
-            // order that the function value at the first of them contributes to the
-            // off-diagonal second derivative terms of the initial quadratic model.
-
+        // Set the nonzero initial elements of BMAT and the quadratic model in the
+        // cases when NF is at most 2*N+1. If NF exceeds N+1, then the positions
+        // of the NF-th and (NF-N)-th interpolation points may be switched, in
+        // order that the function value at the first of them contributes to the
+        // off-diagonal second derivative terms of the initial quadratic model.
+        for(int j = 0; j < numberOfInterpolationPoints; j++) {
+            final double f = fAtInterpolationPoints.getEntry(j);
             if (j <= 2 * dimension) {
                 if (j >= 1 && j <= dimension) {
                     double step = interpolationPoints.getEntry(j, j -1);
