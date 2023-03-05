@@ -2168,13 +2168,7 @@ public class BOBYQAOptimizer
         bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
             dimension);
         modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
-        for (int i = 0, max = dimension * np / 2; i < max; i++) {
-            modelSecondDerivativesValues.setEntry(i, ZERO);
-        }
         modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
-        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-            modelSecondDerivativesParameters.setEntry(k, ZERO);
-        }
         zMatrix = new Array2DRowRealMatrix(numberOfInterpolationPoints,
             numberOfInterpolationPoints - dimension - 1);
 
