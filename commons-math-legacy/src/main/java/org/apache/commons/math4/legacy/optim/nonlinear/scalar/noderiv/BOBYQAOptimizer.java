@@ -2165,24 +2165,10 @@ public class BOBYQAOptimizer
 
         // Set XBASE to the initial vector of variables, and set the initial
         // elements of XPT, BMAT, HQ, PQ and ZMAT to zero.
-        originShift = new ArrayRealVector(dimension);
-        for (int j = 0; j < dimension; j++) {
-            originShift.setEntry(j, currentBest.getEntry(j));
-        }
+        originShift = new ArrayRealVector(currentBest);
         interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
-        for (int j = 0; j < dimension; j++) {
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                interpolationPoints.setEntry(k, j, ZERO);
-            }
-        }
         bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
             dimension);
-        final int ndim = bMatrix.getRowDimension();
-        for (int j = 0; j < dimension; j++) {
-            for (int i = 0; i < ndim; i++) {
-                bMatrix.setEntry(i, j, ZERO);
-            }
-        }
         for (int i = 0, max = dimension * np / 2; i < max; i++) {
             modelSecondDerivativesValues.setEntry(i, ZERO);
         }
@@ -2191,11 +2177,6 @@ public class BOBYQAOptimizer
         }
         zMatrix = new Array2DRowRealMatrix(numberOfInterpolationPoints,
             numberOfInterpolationPoints - dimension - 1);
-        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-            for (int j = 0, max = numberOfInterpolationPoints - np; j < max; j++) {
-                zMatrix.setEntry(k, j, ZERO);
-            }
-        }
 
         // Begin the initialization procedure. NF becomes one more than the number
         // of function values so far. The coordinates of the displacement of the

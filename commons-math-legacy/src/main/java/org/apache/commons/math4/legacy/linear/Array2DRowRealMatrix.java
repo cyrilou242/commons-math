@@ -45,7 +45,7 @@ public class Array2DRowRealMatrix extends AbstractRealMatrix implements Serializ
     public Array2DRowRealMatrix() {}
 
     /**
-     * Create a new RealMatrix with the supplied row and column dimensions.
+     * Create a new RealMatrix of zeroes with the supplied row and column dimensions.
      *
      * @param rowDimension Number of rows in the new matrix.
      * @param columnDimension Number of columns in the new matrix.
