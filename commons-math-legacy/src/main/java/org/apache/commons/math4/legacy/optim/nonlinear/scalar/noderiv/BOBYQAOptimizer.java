@@ -118,7 +118,6 @@ public class BOBYQAOptimizer
     private Array2DRowRealMatrix zMatrix;
     /**
      * Coordinates of the interpolation points relative to {@link #originShift}.
-     * XXX "xpt" in the original code.
      */
     private Array2DRowRealMatrix interpolationPoints;
     /**
@@ -284,7 +283,7 @@ public class BOBYQAOptimizer
      *     IPRINT and MAXFUN are identical to the corresponding arguments of BOBYQA.
      *     XBASE holds a shift of origin that should reduce the contributions
      *       from rounding errors to values of the model and Lagrange functions.
-     *     XPT is a two-dimensional array that holds the coordinates of the
+     *     interpolationPoints is a matrix that holds the coordinates of the
      *       interpolation points relative to XBASE.
      *     FVAL holds the values of F at the interpolation points.
      *     XOPT is set to the displacement from XBASE of the trust region centre.
@@ -600,7 +599,7 @@ public class BOBYQAOptimizer
             }
 
             // Calculate VLAG and BETA for the current choice of D. The scalar
-            // product of D with XPT(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
+            // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
         }
         case 230: {
@@ -1137,13 +1136,13 @@ public class BOBYQAOptimizer
     // ----------------------------------------------------------------------------------------
 
     /**
-     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, BMAT, ZMAT, NDIM, SL and
+     *     The arguments N, numberOfInterpolationPoints, interpolationPoints, XOPT, BMAT, ZMAT, NDIM, SL and
      *     SU all have the same meanings as the corresponding arguments of BOBYQB.
      *     KOPT is the index of the optimal interpolation point.
      *     KNEW is the index of the interpolation point that is going to be moved.
      *     ADELT is the current trust region bound.
      *     XNEW will be set to a suitable new position for the interpolation point
-     *       XPT(KNEW,.). Specifically, it satisfies the SL, SU and trust region
+     *       interpolationPoints(KNEW,.). Specifically, it satisfies the SL, SU and trust region
      *       bounds and it should provide a large denominator in the next call of
      *       UPDATE. The step XNEW-XOPT from XOPT is restricted to moves along the
      *       straight lines through XOPT and another interpolation point.
@@ -1470,7 +1469,8 @@ public class BOBYQAOptimizer
      *     by the current D and the gradient of Q at XOPT+D, staying on the trust
      *     region boundary. Termination occurs when the reduction in Q seems to
      *     be close to the greatest reduction that can be achieved.
-     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, gradientAtTrustRegionCenter, HQ, PQ, SL and SU
+     *     The arguments N, numberOfInterpolationPoints, interpolationPoints, XOPT,
+     *     gradientAtTrustRegionCenter, HQ, PQ, SL and SU
      *     have the same meanings as the corresponding arguments of BOBYQB.
      *     DELTA is the trust region radius for the present calculation, which
      *       seeks a small value of the quadratic model within distance DELTA of
@@ -2131,19 +2131,22 @@ public class BOBYQAOptimizer
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
 
-        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, gradientAtTrustRegionCenter, HQ, PQ,
+        // The call of PRELIM sets the elements of XBASE, interpolationPoints, FVAL,
+        // gradientAtTrustRegionCenter, HQ, PQ,
         // BMAT and ZMAT for the first iteration, with the corresponding values of
         // NF and KOPT, which are the number of calls of CALFUN so far and the
         // index of the interpolation point at the trust region centre. Then the
         // initial XOPT is set too. gradientAtTrustRegionCenter will be updated if KOPT is different from KBASE.
         /**
-         *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, gradientAtTrustRegionCenter, HQ, PQ,
+         *     SUBROUTINE PRELIM sets the elements of XBASE, interpolationPoints,
+         *     FVAL, gradientAtTrustRegionCenter, HQ, PQ,
          *     BMAT and ZMAT for the first iteration, and it maintains the values of
          *     NF and KOPT. The vector X is also changed by PRELIM.
          *
          *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
          *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
-         *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
+         *     The arguments XBASE, interpolationPoints,
+         *     FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
          *       are the same as the corresponding arguments in BOBYQB, the elements
          *       of SL and SU being set in BOBYQA.
          *     gradientAtTrustRegionCenter is usually the gradient of the quadratic model at XOPT+XBASE, but
@@ -2151,31 +2154,30 @@ public class BOBYQAOptimizer
          *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
          *     NF is maintaned as the number of calls of CALFUN so far.
          *     KOPT will be such that the least calculated value of F so far is at
-         *       the point XPT(KOPT,.)+XBASE in the space of the variables.
+         *       the point interpolationPoints(KOPT,.)+XBASE in the space of the variables.
          *
          * @param lowerBound Lower bounds.
          * @param upperBound Upper bounds.
          */
 
-        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
-        final double recip = 1d / rhosq;
-        final int np = dimension + 1;
-
         // Set XBASE to the initial vector of variables, and set the initial
-        // elements of XPT, BMAT, HQ, PQ and ZMAT to zero.
+        // elements of interpolationPoints, BMAT, HQ, PQ and ZMAT to zero.
         originShift = new ArrayRealVector(currentBest);
         interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
-        bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
-            dimension);
         modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
         modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
+        bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
+            dimension);
         zMatrix = new Array2DRowRealMatrix(numberOfInterpolationPoints,
             numberOfInterpolationPoints - dimension - 1);
 
         // Begin the initialization procedure. NF becomes one more than the number
         // of function values so far. The coordinates of the displacement of the
-        // next initial interpolation point from XBASE are set in XPT(NF+1,.).
-
+        // next initial interpolation point from XBASE are set
+        // in interpolationPoints(NF+1,.).
+        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
+        final double recip = 1d / rhosq;
+        final int np = dimension + 1;
         int ipt = 0;
         int jpt = 0;
         double fbeg = Double.NaN;
