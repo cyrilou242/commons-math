@@ -2094,12 +2094,10 @@ public class BOBYQAOptimizer
         fAtInterpolationPoints = new ArrayRealVector(numberOfInterpolationPoints);
         trustRegionCenterOffset = new ArrayRealVector(dimension);
         gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
-        modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
         newPoint = new ArrayRealVector(dimension);
         alternativeNewPoint = new ArrayRealVector(dimension);
         trialStepPoint = new ArrayRealVector(dimension);
         lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
-        modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
 
         isMinimize = (getGoalType() == GoalType.MINIMIZE);
 
@@ -2169,9 +2167,11 @@ public class BOBYQAOptimizer
         interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
         bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
             dimension);
+        modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
         for (int i = 0, max = dimension * np / 2; i < max; i++) {
             modelSecondDerivativesValues.setEntry(i, ZERO);
         }
+        modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
         for (int k = 0; k < numberOfInterpolationPoints; k++) {
             modelSecondDerivativesParameters.setEntry(k, ZERO);
         }
