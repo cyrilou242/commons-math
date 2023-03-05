@@ -728,12 +728,11 @@ public class BOBYQAOptimizer
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
                 currentBest.setEntry(i, boundedNewBest);
             }
-
             f = computeObjectiveValue(currentBest.toArray());
-
             if (!isMinimize) {
                 f = -f;
             }
+
             if (ntrits == -1) {
                 fsave = f;
                 state = 720; break;
@@ -2157,52 +2156,41 @@ public class BOBYQAOptimizer
         // in interpolationPoints(NF+1,.).
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         final double recip = 1d / rhosq;
-        final int np = dimension + 1;
-        int ipt = 0;
-        int jpt = 0;
         double fbeg = Double.NaN;
         trustRegionCenterInterpolationPointIndex = 0;
 
+        // construct a matrix as defined in (2.2)
         for(int j = 0; j < numberOfInterpolationPoints; j++) {
-            final int nfx = j - dimension;
-            final int nfmm = j - 1;
-            final int nfxm = nfx - 1;
-            double stepa = 0;
-            double stepb = 0;
             if (j <= 2 * dimension) {
-                if (j >= 1 &&
-                    j <= dimension) {
-                    stepa = initialTrustRegionRadius;
-                    if (upperDifference.getEntry(nfmm) == ZERO) {
-                        stepa = -stepa;
+                if (j >= 1 && j <= dimension) {
+                    double step = initialTrustRegionRadius;
+                    if (upperDifference.getEntry(j - 1) == ZERO) {
+                        step = -step;
                     }
-                    interpolationPoints.setEntry(j, nfmm, stepa);
-                } else if (j > dimension) {
-                    stepa = interpolationPoints.getEntry(nfx, nfxm);
-                    stepb = -initialTrustRegionRadius;
-                    if (lowerDifference.getEntry(nfxm) == ZERO) {
-                        stepb = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(nfxm));
+                    interpolationPoints.setEntry(j, j - 1, step);
+                } else if (j >= dimension + 1) {
+                    double step = -initialTrustRegionRadius;
+                    if (lowerDifference.getEntry(j - dimension - 1) == ZERO) {
+                        step = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(
+                            j - dimension - 1));
                     }
-                    if (upperDifference.getEntry(nfxm) == ZERO) {
-                        stepb = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(nfxm));
+                    if (upperDifference.getEntry(j - dimension - 1) == ZERO) {
+                        step = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(
+                            j - dimension - 1));
                     }
-                    interpolationPoints.setEntry(j, nfxm, stepb);
+                    interpolationPoints.setEntry(j, j - dimension - 1, step);
                 }
             } else {
-                final int tmp1 = (j - np) / dimension;
-                jpt = j - tmp1 * dimension - dimension;
-                ipt = jpt + tmp1;
+                final int tmp1 = (j - (dimension + 1)) / dimension;
+                int jpt = j - tmp1 * dimension - dimension;
+                int ipt = jpt + tmp1;
                 if (ipt > dimension) {
                     final int tmp2 = jpt;
                     jpt = ipt - dimension;
                     ipt = tmp2;
                 }
-                final int iptMinus1 = ipt - 1;
-                final int jptMinus1 = jpt - 1;
-                interpolationPoints.setEntry(
-                    j, iptMinus1, interpolationPoints.getEntry(ipt, iptMinus1));
-                interpolationPoints.setEntry(
-                    j, jptMinus1, interpolationPoints.getEntry(jpt, jptMinus1));
+                interpolationPoints.setEntry(j, ipt - 1, interpolationPoints.getEntry(ipt, ipt - 1));
+                interpolationPoints.setEntry(j, jpt - 1, interpolationPoints.getEntry(jpt, jpt - 1));
             }
             // Calculate the next value of F. The least function value so far and
             // its index are required.
@@ -2212,7 +2200,6 @@ public class BOBYQAOptimizer
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
                     upperBound[i]));
             }
-
             final double objectiveValue = computeObjectiveValue(currentBest.toArray());
             final double f = isMinimize ? objectiveValue : -objectiveValue;
             fAtInterpolationPoints.setEntry(j, f);
@@ -2232,47 +2219,64 @@ public class BOBYQAOptimizer
 
             if (j <= 2 * dimension) {
                 if (j >= 1 && j <= dimension) {
-                    gradientAtTrustRegionCenter.setEntry(nfmm, (f - fbeg) / stepa);
+                    double step = interpolationPoints.getEntry(j, j -1);
+                    gradientAtTrustRegionCenter.setEntry(j - 1, (f - fbeg) / step);
                     if (numberOfInterpolationPoints < j + dimension + 1) {
-                        final double oneOverStepA = ONE / stepa;
-                        bMatrix.setEntry(0, nfmm, -oneOverStepA);
-                        bMatrix.setEntry(j, nfmm, oneOverStepA);
-                        bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
+                        final double oneOverStepA = ONE / step;
+                        bMatrix.setEntry(0, j - 1, -oneOverStepA);
+                        bMatrix.setEntry(j, j - 1, oneOverStepA);
+                        bMatrix.setEntry(numberOfInterpolationPoints + j - 1, j - 1, -HALF * rhosq);
                     }
                 } else if (j >= dimension + 1) {
-                    final int ih = nfx * (nfx + 1) / 2 - 1;
+                    final double stepa = interpolationPoints.getEntry(j - dimension,
+                        j - dimension - 1);
+                    final double stepb = interpolationPoints.getEntry(j, j - dimension - 1);
+                    final int ih = (j - dimension) * (j - dimension + 1) / 2 - 1;
                     final double tmp = (f - fbeg) / stepb;
                     final double diff = stepb - stepa;
-                    modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(nfxm)) / diff);
-                    gradientAtTrustRegionCenter.setEntry(nfxm, (gradientAtTrustRegionCenter.getEntry(nfxm) * stepb - tmp * stepa) / diff);
+                    modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(
+                        j - dimension - 1)) / diff);
+                    gradientAtTrustRegionCenter.setEntry(
+                        j - dimension - 1, (gradientAtTrustRegionCenter.getEntry(j - dimension - 1) * stepb - tmp * stepa) / diff);
                     if (stepa * stepb < ZERO && f < fAtInterpolationPoints.getEntry(j - dimension)) {
                         fAtInterpolationPoints.setEntry(j, fAtInterpolationPoints.getEntry(j - dimension));
                         fAtInterpolationPoints.setEntry(j - dimension, f);
                         if (trustRegionCenterInterpolationPointIndex == j) {
                             trustRegionCenterInterpolationPointIndex = j - dimension;
                         }
-                        interpolationPoints.setEntry(j - dimension, nfxm, stepb);
-                        interpolationPoints.setEntry(j, nfxm, stepa);
+                        interpolationPoints.setEntry(j - dimension, j - dimension - 1, stepb);
+                        interpolationPoints.setEntry(j, j - dimension - 1, stepa);
                     }
-                    bMatrix.setEntry(0, nfxm, -(stepa + stepb) / (stepa * stepb));
+                    bMatrix.setEntry(0, j - dimension - 1, -(stepa + stepb) / (stepa * stepb));
                     bMatrix.setEntry(
-                        j, nfxm, -HALF / interpolationPoints.getEntry(j - dimension, nfxm));
-                    bMatrix.setEntry(j - dimension, nfxm,
-                        -bMatrix.getEntry(0, nfxm) - bMatrix.getEntry(j, nfxm));
-                    zMatrix.setEntry(0, nfxm, JdkMath.sqrt(TWO) / (stepa * stepb));
-                    zMatrix.setEntry(j, nfxm, JdkMath.sqrt(HALF) / rhosq);
+                        j, j - dimension - 1, -HALF / interpolationPoints.getEntry(j - dimension,
+                            j - dimension - 1));
+                    bMatrix.setEntry(j - dimension, j - dimension - 1,
+                        -bMatrix.getEntry(0, j - dimension - 1) - bMatrix.getEntry(j,
+                            j - dimension - 1));
+                    zMatrix.setEntry(0, j - dimension - 1, JdkMath.sqrt(TWO) / (stepa * stepb));
+                    zMatrix.setEntry(j, j - dimension - 1, JdkMath.sqrt(HALF) / rhosq);
                     // zMatrix.setEntry(nfm, nfxm, JdkMath.sqrt(HALF) * recip); // XXX "testAckley" and "testDiffPow" fail.
-                    zMatrix.setEntry(j - dimension, nfxm,
-                        -zMatrix.getEntry(0, nfxm) - zMatrix.getEntry(j, nfxm));
+                    zMatrix.setEntry(j - dimension, j - dimension - 1,
+                        -zMatrix.getEntry(0, j - dimension - 1) - zMatrix.getEntry(j,
+                            j - dimension - 1));
                 }
 
                 // Set the off-diagonal second derivatives of the Lagrange functions and
                 // the initial quadratic model.
             } else {
-                zMatrix.setEntry(0, nfxm, recip);
-                zMatrix.setEntry(j, nfxm, recip);
-                zMatrix.setEntry(ipt, nfxm, -recip);
-                zMatrix.setEntry(jpt, nfxm, -recip);
+                final int tmp1 = (j - (dimension + 1)) / dimension;
+                int jpt = j - tmp1 * dimension - dimension;
+                int ipt = jpt + tmp1;
+                if (ipt > dimension) {
+                    final int tmp2 = jpt;
+                    jpt = ipt - dimension;
+                    ipt = tmp2;
+                }
+                zMatrix.setEntry(0, j - dimension - 1, recip);
+                zMatrix.setEntry(j, j - dimension - 1, recip);
+                zMatrix.setEntry(ipt, j - dimension - 1, -recip);
+                zMatrix.setEntry(jpt, j - dimension - 1, -recip);
 
                 final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
                 final double tmp = interpolationPoints.getEntry(j, ipt - 1) * interpolationPoints.getEntry(
