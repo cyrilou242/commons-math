@@ -244,9 +244,9 @@ public class BOBYQAOptimizer
     // lower bounds. The arguments of the subroutine are as follows.
     //
     // N must be set to the number of variables and must be at least two.
-    // NPT is the number of interpolation conditions. Its value must be in
-    //   the interval [N+2,(N+1)(N+2)/2]. Choices that exceed 2*N+1 are not
-    //   recommended.
+    // numberOfInterpolationPoints is the number of interpolation conditions.
+    // Its value must be in the interval [N+2,(N+1)(N+2)/2].
+    // Choices that exceed 2*N+1 are not recommended.
     // Initial values of the variables must be set in X(1),X(2),...,X(N). They
     //   will be changed to the values that give the least calculated F.
     // For I=1,2,...,N, XL(I) and XU(I) must provide the lower and upper
@@ -263,7 +263,7 @@ public class BOBYQAOptimizer
     //   is less than 2*RHOBEG.
     // MAXFUN must be set to an upper bound on the number of calls of CALFUN.
     // The array W will be used for working space. Its length must be at least
-    //   (NPT+5)*(NPT+N)+3*N*(N+5)/2.
+    //   (numberOfInterpolationPoints+5)*(numberOfInterpolationPoints+N)+3*N*(N+5)/2.
     /** {@inheritDoc} */
     @Override
     protected PointValuePair doOptimize() {
@@ -281,8 +281,8 @@ public class BOBYQAOptimizer
     // ----------------------------------------------------------------------------------------
 
     /**
-     *     The arguments N, NPT, X, XL, XU, RHOBEG, RHOEND, IPRINT and MAXFUN
-     *       are identical to the corresponding arguments in SUBROUTINE BOBYQA.
+     *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, RHOEND,
+     *     IPRINT and MAXFUN are identical to the corresponding arguments of BOBYQA.
      *     XBASE holds a shift of origin that should reduce the contributions
      *       from rounding errors to values of the model and Lagrange functions.
      *     XPT is a two-dimensional array that holds the coordinates of the
@@ -294,10 +294,11 @@ public class BOBYQAOptimizer
      *     PQ contains the parameters of the implicit second derivatives of the
      *       quadratic model.
      *     BMAT holds the last N columns of H.
-     *     ZMAT holds the factorization of the leading NPT by NPT submatrix of H,
+     *     ZMAT holds the factorization of the leading numberOfInterpolationPoints by
+     *       numberOfInterpolationPoints submatrix of H,
      *       this factorization being ZMAT times ZMAT^T, which provides both the
      *       correct rank and positive semi-definiteness.
-     *     NDIM is the first dimension of BMAT and has the value NPT+N.
+     *     NDIM is the first dimension of BMAT and has the value numberOfInterpolationPoints+N.
      *     SL and SU hold the differences XL-XBASE and XU-XBASE, respectively.
      *       All the components of every XOPT are going to satisfy the bounds
      *       SL(I) .LEQ. XOPT(I) .LEQ. SU(I), with appropriate equalities when
@@ -311,7 +312,7 @@ public class BOBYQAOptimizer
      *     VLAG contains the values of the Lagrange functions at a new point X.
      *       They are part of a product that requires VLAG to be of length NDIM.
      *     W is a one-dimensional array that is used for working space. Its length
-     *       must be at least 3*NDIM = 3*(NPT+N).
+     *       must be at least 3*NDIM = 3*(numberOfInterpolationPoints+N).
      *
      * @param lowerBound Lower bounds.
      * @param upperBound Upper bounds.
@@ -321,14 +322,13 @@ public class BOBYQAOptimizer
                           double[] upperBound) {
 
         final int n = currentBest.getDimension();
-        final int npt = numberOfInterpolationPoints;
         final int np = n + 1;
-        final int nptm = npt - np;
+        final int nptm = numberOfInterpolationPoints - np;
         final int nh = n * np / 2;
 
         final ArrayRealVector work1 = new ArrayRealVector(n);
-        final ArrayRealVector work2 = new ArrayRealVector(npt);
-        final ArrayRealVector work3 = new ArrayRealVector(npt);
+        final ArrayRealVector work2 = new ArrayRealVector(numberOfInterpolationPoints);
+        final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
 
         double cauchy = Double.NaN;
         double alpha = Double.NaN;
@@ -345,7 +345,7 @@ public class BOBYQAOptimizer
         // of NF and KOPT, which are the number of calls of CALFUN so far and the
         // index of the interpolation point at the trust region centre. Then the
         // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
-        // less than NPT. GOPT will be updated if KOPT is different from KBASE.
+        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
 
         trustRegionCenterInterpolationPointIndex = 0;
 
@@ -399,8 +399,8 @@ public class BOBYQAOptimizer
                         ih++;
                     }
                 }
-                if (getEvaluations() > npt) {
-                    for (int k = 0; k < npt; k++) {
+                if (getEvaluations() > numberOfInterpolationPoints) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         double temp = ZERO;
                         for (int j = 0; j < n; j++) {
                             temp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
@@ -470,7 +470,7 @@ public class BOBYQAOptimizer
                     }
                     if (bdtest < bdtol) {
                         double curv = modelSecondDerivativesValues.getEntry((j + j * j) / 2);
-                        for (int k = 0; k < npt; k++) {
+                        for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             // Computing 2nd power
                             final double d1 = interpolationPoints.getEntry(k, j);
                             curv += modelSecondDerivativesParameters.getEntry(k) * (d1 * d1);
@@ -497,7 +497,7 @@ public class BOBYQAOptimizer
                 double sumpq = ZERO;
                 // final RealVector sumVector
                 //     = new ArrayRealVector(npt, -HALF * xoptsq).add(interpolationPoints.operate(trustRegionCenter));
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sumpq += modelSecondDerivativesParameters.getEntry(k);
                     double sum = -HALF * xoptsq;
                     for (int i = 0; i < n; i++) {
@@ -509,7 +509,7 @@ public class BOBYQAOptimizer
                     for (int i = 0; i < n; i++) {
                         work1.setEntry(i, bMatrix.getEntry(k, i));
                         lagrangeValuesAtNewPoint.setEntry(i, sum * interpolationPoints.getEntry(k, i) + temp * trustRegionCenterOffset.getEntry(i));
-                        final int ip = npt + i;
+                        final int ip = numberOfInterpolationPoints + i;
                         for (int j = 0; j <= i; j++) {
                             bMatrix.setEntry(ip, j,
                                           bMatrix.getEntry(ip, j)
@@ -524,25 +524,25 @@ public class BOBYQAOptimizer
                 for (int m = 0; m < nptm; m++) {
                     double sumz = ZERO;
                     double sumw = ZERO;
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sumz += zMatrix.getEntry(k, m);
                         lagrangeValuesAtNewPoint.setEntry(k, work2.getEntry(k) * zMatrix.getEntry(k, m));
                         sumw += lagrangeValuesAtNewPoint.getEntry(k);
                     }
                     for (int j = 0; j < n; j++) {
                         double sum = (fracsq * sumz - HALF * sumw) * trustRegionCenterOffset.getEntry(j);
-                        for (int k = 0; k < npt; k++) {
+                        for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             sum += lagrangeValuesAtNewPoint.getEntry(k) * interpolationPoints.getEntry(k, j);
                         }
                         work1.setEntry(j, sum);
-                        for (int k = 0; k < npt; k++) {
+                        for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             bMatrix.setEntry(k, j,
                                           bMatrix.getEntry(k, j)
                                           + sum * zMatrix.getEntry(k, m));
                         }
                     }
                     for (int i = 0; i < n; i++) {
-                        final int ip = i + npt;
+                        final int ip = i + numberOfInterpolationPoints;
                         final double temp = work1.getEntry(i);
                         for (int j = 0; j <= i; j++) {
                             bMatrix.setEntry(ip, j,
@@ -558,7 +558,7 @@ public class BOBYQAOptimizer
                 int ih = 0;
                 for (int j = 0; j < n; j++) {
                     work1.setEntry(j, -HALF * sumpq * trustRegionCenterOffset.getEntry(j));
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         work1.setEntry(j, work1.getEntry(j) + modelSecondDerivativesParameters.getEntry(k) * interpolationPoints.getEntry(k, j));
                         interpolationPoints.setEntry(k, j, interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
                     }
@@ -567,7 +567,8 @@ public class BOBYQAOptimizer
                                     modelSecondDerivativesValues.getEntry(ih)
                                     + work1.getEntry(i) * trustRegionCenterOffset.getEntry(j)
                                     + trustRegionCenterOffset.getEntry(i) * work1.getEntry(j));
-                        bMatrix.setEntry(npt + i, j, bMatrix.getEntry(npt + j, i));
+                        bMatrix.setEntry(numberOfInterpolationPoints + i, j, bMatrix.getEntry(
+                            numberOfInterpolationPoints + j, i));
                         ih++;
                     }
                 }
@@ -615,11 +616,11 @@ public class BOBYQAOptimizer
             }
 
             // Calculate VLAG and BETA for the current choice of D. The scalar
-            // product of D with XPT(K,.) is going to be held in W(NPT+K) for
+            // product of D with XPT(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
         }
         case 230: {
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
                 double sumb = ZERO;
                 double sum = ZERO;
@@ -635,11 +636,11 @@ public class BOBYQAOptimizer
             beta = ZERO;
             for (int m = 0; m < nptm; m++) {
                 double sum = ZERO;
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sum += zMatrix.getEntry(k, m) * work3.getEntry(k);
                 }
                 beta -= sum * sum;
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     lagrangeValuesAtNewPoint.setEntry(k, lagrangeValuesAtNewPoint.getEntry(k) + sum * zMatrix.getEntry(k, m));
                 }
             }
@@ -651,11 +652,11 @@ public class BOBYQAOptimizer
                 final double d1 = trialStepPoint.getEntry(j);
                 dsq += d1 * d1;
                 double sum = ZERO;
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sum += work3.getEntry(k) * bMatrix.getEntry(k, j);
                 }
                 bsum += sum * trialStepPoint.getEntry(j);
-                final int jp = npt + j;
+                final int jp = numberOfInterpolationPoints + j;
                 for (int i = 0; i < n; i++) {
                     sum += bMatrix.getEntry(jp, i) * trialStepPoint.getEntry(i);
                 }
@@ -697,7 +698,7 @@ public class BOBYQAOptimizer
                 scaden = ZERO;
                 biglsq = ZERO;
                 knew = 0;
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     if (k == trustRegionCenterInterpolationPointIndex) {
                         continue;
                     }
@@ -782,7 +783,7 @@ public class BOBYQAOptimizer
                     ih++;
                }
             }
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 // Computing 2nd power
                 final double d1 = work2.getEntry(k);
                 final double d2 = d1 * d1; // "d1" must be squared first to prevent test failures.
@@ -827,7 +828,7 @@ public class BOBYQAOptimizer
                     scaden = ZERO;
                     biglsq = ZERO;
                     knew = 0;
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         double hdiag = ZERO;
                         for (int m = 0; m < nptm; m++) {
                             // Computing 2nd power
@@ -882,7 +883,7 @@ public class BOBYQAOptimizer
             }
             for (int m = 0; m < nptm; m++) {
                 final double temp = diff * zMatrix.getEntry(knew, m);
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     modelSecondDerivativesParameters.setEntry(k, modelSecondDerivativesParameters.getEntry(k) + temp * zMatrix.getEntry(k, m));
                 }
             }
@@ -895,7 +896,7 @@ public class BOBYQAOptimizer
                 interpolationPoints.setEntry(knew, i, newPoint.getEntry(i));
                 work1.setEntry(i, bMatrix.getEntry(knew, i));
             }
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
                 for (int m = 0; m < nptm; m++) {
                     suma += zMatrix.getEntry(knew, m) * zMatrix.getEntry(k, m);
@@ -932,7 +933,7 @@ public class BOBYQAOptimizer
                         ih++;
                     }
                 }
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double temp = ZERO;
                     for (int j = 0; j < n; j++) {
                         temp += interpolationPoints.getEntry(k, j) * trialStepPoint.getEntry(j);
@@ -946,23 +947,23 @@ public class BOBYQAOptimizer
 
             // Calculate the parameters of the least Frobenius norm interpolant to
             // the current data, the gradient of this interpolant at XOPT being put
-            // into VLAG(NPT+I), I=1,2,...,N.
+            // into VLAG(numberOfInterpolationPoints+I), I=1,2,...,N.
 
             if (ntrits > 0) {
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     lagrangeValuesAtNewPoint.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
                     work3.setEntry(k, ZERO);
                 }
                 for (int j = 0; j < nptm; j++) {
                     double sum = ZERO;
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += zMatrix.getEntry(k, j) * lagrangeValuesAtNewPoint.getEntry(k);
                     }
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         work3.setEntry(k, work3.getEntry(k) + sum * zMatrix.getEntry(k, j));
                     }
                 }
-                for (int k = 0; k < npt; k++) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double sum = ZERO;
                     for (int j = 0; j < n; j++) {
                         sum += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
@@ -974,7 +975,7 @@ public class BOBYQAOptimizer
                 double gisq = ZERO;
                 for (int i = 0; i < n; i++) {
                     double sum = ZERO;
-                    for (int k = 0; k < npt; k++) {
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += bMatrix.getEntry(k, i) *
                             lagrangeValuesAtNewPoint.getEntry(k) + interpolationPoints.getEntry(k, i) * work3.getEntry(k);
                     }
@@ -1000,7 +1001,7 @@ public class BOBYQAOptimizer
                         gqsq += d1 * d1;
                         gisq += sum * sum;
                     }
-                    lagrangeValuesAtNewPoint.setEntry(npt + i, sum);
+                    lagrangeValuesAtNewPoint.setEntry(numberOfInterpolationPoints + i, sum);
                 }
 
                 // Test whether to replace the new quadratic model by the least Frobenius
@@ -1011,11 +1012,12 @@ public class BOBYQAOptimizer
                     itest = 0;
                 }
                 if (itest >= 3) {
-                    for (int i = 0, max = JdkMath.max(npt, nh); i < max; i++) {
+                    for (int i = 0, max = JdkMath.max(numberOfInterpolationPoints, nh); i < max; i++) {
                         if (i < n) {
-                            gradientAtTrustRegionCenter.setEntry(i, lagrangeValuesAtNewPoint.getEntry(npt + i));
+                            gradientAtTrustRegionCenter.setEntry(i, lagrangeValuesAtNewPoint.getEntry(
+                                numberOfInterpolationPoints + i));
                         }
-                        if (i < npt) {
+                        if (i < numberOfInterpolationPoints) {
                             modelSecondDerivativesParameters.setEntry(i, work2.getEntry(i));
                         }
                         if (i < nh) {
@@ -1049,7 +1051,7 @@ public class BOBYQAOptimizer
         }
         case 650: {
             knew = -1;
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double sum = ZERO;
                 for (int j = 0; j < n; j++) {
                     // Computing 2nd power
@@ -1151,8 +1153,8 @@ public class BOBYQAOptimizer
     // ----------------------------------------------------------------------------------------
 
     /**
-     *     The arguments N, NPT, XPT, XOPT, BMAT, ZMAT, NDIM, SL and SU all have
-     *       the same meanings as the corresponding arguments of BOBYQB.
+     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, BMAT, ZMAT, NDIM, SL and
+     *     SU all have the same meanings as the corresponding arguments of BOBYQB.
      *     KOPT is the index of the optimal interpolation point.
      *     KNEW is the index of the interpolation point that is going to be moved.
      *     ADELT is the current trust region bound.
@@ -1172,13 +1174,13 @@ public class BOBYQAOptimizer
      *       except that CAUCHY is set to zero if XALT is not calculated.
      *     GLAG is a working space vector of length N for the gradient of the
      *       KNEW-th Lagrange function at XOPT.
-     *     HCOL is a working space vector of length NPT for the second derivative
-     *       coefficients of the KNEW-th Lagrange function.
+     *     HCOL is a working space vector of length numberOfInterpolationPoints for the second
+     *     derivative coefficients of the KNEW-th Lagrange function.
      *     W is a working space vector of length 2N that is going to hold the
      *       constrained Cauchy step from XOPT of the Lagrange function, followed
      *       by the downhill version of XALT when the uphill step is calculated.
      *
-     *     Set the first NPT components of W to the leading elements of the
+     *     Set the first numberOfInterpolationPoints components of W to the leading elements of the
      *     KNEW-th column of the H matrix.
      * @param knew
      * @param adelt
@@ -1190,18 +1192,17 @@ public class BOBYQAOptimizer
     ) {
         final int n = currentBest.getDimension();
 
-        final int npt = numberOfInterpolationPoints;
-        final ArrayRealVector hcol = new ArrayRealVector(npt);
-        for (int j = 0, max = npt - n - 1; j < max; j++) {
+        final ArrayRealVector hcol = new ArrayRealVector(numberOfInterpolationPoints);
+        for (int j = 0, max = numberOfInterpolationPoints - n - 1; j < max; j++) {
             final double tmp = zMatrix.getEntry(knew, j);
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 hcol.setEntry(k, hcol.getEntry(k) + tmp * zMatrix.getEntry(k, j));
             }
         }
 
         // Calculate the gradient of the KNEW-th Lagrange function at XOPT.
         final RealVector glag = bMatrix.getRowVector(knew);
-        for (int k = 0; k < npt; k++) {
+        for (int k = 0; k < numberOfInterpolationPoints; k++) {
             double tmp = ZERO;
             for (int j = 0; j < n; j++) {
                 tmp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
@@ -1225,7 +1226,7 @@ public class BOBYQAOptimizer
         double stpsav = 0;
         final double alpha = hcol.getEntry(knew);
         final double halfAlpha = HALF * alpha;
-        for (int k = 0; k < npt; k++) {
+        for (int k = 0; k < numberOfInterpolationPoints; k++) {
             if (k == trustRegionCenterInterpolationPointIndex) {
                 continue;
             }
@@ -1422,7 +1423,7 @@ public class BOBYQAOptimizer
             // the square of this function.
 
             double curv = ZERO;
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double tmp = ZERO;
                 for (int j = 0; j < n; j++) {
                     tmp += interpolationPoints.getEntry(k, j) * work1.getEntry(j);
@@ -1481,8 +1482,8 @@ public class BOBYQAOptimizer
      *     BMAT and ZMAT for the first iteration, and it maintains the values of
      *     NF and KOPT. The vector X is also changed by PRELIM.
      *
-     *     The arguments N, NPT, X, XL, XU, RHOBEG, IPRINT and MAXFUN are the
-     *       same as the corresponding arguments in SUBROUTINE BOBYQA.
+     *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
+     *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
      *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
      *       are the same as the corresponding arguments in BOBYQB, the elements
      *       of SL and SU being set in BOBYQA.
@@ -1500,7 +1501,6 @@ public class BOBYQAOptimizer
                         double[] upperBound) {
 
         final int n = currentBest.getDimension();
-        final int npt = numberOfInterpolationPoints;
         final int ndim = bMatrix.getRowDimension();
 
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
@@ -1512,7 +1512,7 @@ public class BOBYQAOptimizer
 
         for (int j = 0; j < n; j++) {
             originShift.setEntry(j, currentBest.getEntry(j));
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 interpolationPoints.setEntry(k, j, ZERO);
             }
             for (int i = 0; i < ndim; i++) {
@@ -1522,9 +1522,9 @@ public class BOBYQAOptimizer
         for (int i = 0, max = n * np / 2; i < max; i++) {
             modelSecondDerivativesValues.setEntry(i, ZERO);
         }
-        for (int k = 0; k < npt; k++) {
+        for (int k = 0; k < numberOfInterpolationPoints; k++) {
             modelSecondDerivativesParameters.setEntry(k, ZERO);
-            for (int j = 0, max = npt - np; j < max; j++) {
+            for (int j = 0, max = numberOfInterpolationPoints - np; j < max; j++) {
                 zMatrix.setEntry(k, j, ZERO);
             }
         }
@@ -1614,11 +1614,11 @@ public class BOBYQAOptimizer
                 if (numEval >= 2 &&
                     numEval <= n + 1) {
                     gradientAtTrustRegionCenter.setEntry(nfmm, (f - fbeg) / stepa);
-                    if (npt < numEval + n) {
+                    if (numberOfInterpolationPoints < numEval + n) {
                         final double oneOverStepA = ONE / stepa;
                         bMatrix.setEntry(0, nfmm, -oneOverStepA);
                         bMatrix.setEntry(nfm, nfmm, oneOverStepA);
-                        bMatrix.setEntry(npt + nfmm, nfmm, -HALF * rhosq);
+                        bMatrix.setEntry(numberOfInterpolationPoints + nfmm, nfmm, -HALF * rhosq);
                     }
                 } else if (numEval >= n + 2) {
                     final int ih = nfx * (nfx + 1) / 2 - 1;
@@ -1658,7 +1658,7 @@ public class BOBYQAOptimizer
                 final double tmp = interpolationPoints.getEntry(nfm, ipt - 1) * interpolationPoints.getEntry(nfm, jpt - 1);
                 modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
             }
-        } while (getEvaluations() < npt);
+        } while (getEvaluations() < numberOfInterpolationPoints);
     } // prelim
 
 
@@ -1673,8 +1673,8 @@ public class BOBYQAOptimizer
      *     by the current D and the gradient of Q at XOPT+D, staying on the trust
      *     region boundary. Termination occurs when the reduction in Q seems to
      *     be close to the greatest reduction that can be achieved.
-     *     The arguments N, NPT, XPT, XOPT, GOPT, HQ, PQ, SL and SU have the same
-     *       meanings as the corresponding arguments of BOBYQB.
+     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, GOPT, HQ, PQ, SL and SU
+     *     have the same meanings as the corresponding arguments of BOBYQB.
      *     DELTA is the trust region radius for the present calculation, which
      *       seeks a small value of the quadratic model within distance DELTA of
      *       XOPT subject to the bounds on the variables.
@@ -1719,7 +1719,6 @@ public class BOBYQAOptimizer
     ) {
 
         final int n = currentBest.getDimension();
-        final int npt = numberOfInterpolationPoints;
 
         double dsq = Double.NaN;
         double crvmin = Double.NaN;
@@ -2149,7 +2148,7 @@ public class BOBYQAOptimizer
                 }
             }
             final RealVector tmp = interpolationPoints.operate(s).ebeMultiply(modelSecondDerivativesParameters);
-            for (int k = 0; k < npt; k++) {
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 if (modelSecondDerivativesParameters.getEntry(k) != ZERO) {
                     for (int i = 0; i < n; i++) {
                         hs.setEntry(i, hs.getEntry(i) + tmp.getEntry(k) * interpolationPoints.getEntry(k, i));
@@ -2178,7 +2177,8 @@ public class BOBYQAOptimizer
     /**
      *     The arrays BMAT and ZMAT are updated, as required by the new position
      *     of the interpolation point that has the index KNEW. The vector VLAG has
-     *     N+NPT components, set on entry to the first NPT and last N components
+     *     N+numberOfInterpolationPoints components, set on entry
+     *     to the first numberOfInterpolationPoints and last N components
      *     of the product Hw in equation (4.11) of the Powell (2006) paper on
      *     NEWUOA. Further, BETA is set on entry to the value of the parameter
      *     with that name, and DENOM is set to the denominator of the updating
@@ -2231,8 +2231,8 @@ public class BOBYQAOptimizer
             zMatrix.setEntry(knew, j, ZERO);
         }
 
-        // Put the first NPT components of the KNEW-th column of HLAG into W,
-        // and calculate the parameters of the updating formula.
+        // Put the first numberOfInterpolationPoints components of the KNEW-th column of HLAG
+        // into W, and calculate the parameters of the updating formula.
 
         for (int i = 0; i < npt; i++) {
             work.setEntry(i, zMatrix.getEntry(knew, 0) * zMatrix.getEntry(i, 0));
