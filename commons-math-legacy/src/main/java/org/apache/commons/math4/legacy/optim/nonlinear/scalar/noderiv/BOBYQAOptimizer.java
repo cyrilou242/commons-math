@@ -140,7 +140,6 @@ public class BOBYQAOptimizer
     /**
      * Gradient of the quadratic model at {@link #originShift} +
      * {@link #trustRegionCenterOffset}.
-     * XXX "gopt" in the original code.
      */
     private ArrayRealVector gradientAtTrustRegionCenter;
     /**
@@ -289,7 +288,7 @@ public class BOBYQAOptimizer
      *       interpolation points relative to XBASE.
      *     FVAL holds the values of F at the interpolation points.
      *     XOPT is set to the displacement from XBASE of the trust region centre.
-     *     GOPT holds the gradient of the quadratic model at XBASE+XOPT.
+     *     gradientAtTrustRegionCenter holds the gradient of the quadratic model at XBASE+XOPT.
      *     HQ holds the explicit second derivatives of the quadratic model.
      *     PQ contains the parameters of the implicit second derivatives of the
      *       quadratic model.
@@ -366,7 +365,7 @@ public class BOBYQAOptimizer
         double biglsq = ZERO;
         double distsq = ZERO;
 
-        // Update GOPT if necessary before the first iteration and after each
+        // Update gradientAtTrustRegionCenter if necessary before the first iteration and after each
         // call of RESCUE that makes a call of CALFUN.
 
         int state = 20;
@@ -873,7 +872,7 @@ public class BOBYQAOptimizer
                 }
             }
 
-            // Include the new interpolation point, and make the changes to GOPT at
+            // Include the new interpolation point, and make the changes to gradientAtTrustRegionCenter at
             // the old XOPT that are caused by the updating of the quadratic model.
 
             fAtInterpolationPoints.setEntry(knew,  f);
@@ -899,7 +898,7 @@ public class BOBYQAOptimizer
                 gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + diff * work1.getEntry(i));
             }
 
-            // Update XOPT, GOPT and KOPT if the new calculated F is less than FOPT.
+            // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
 
             if (f < fopt) {
                 trustRegionCenterInterpolationPointIndex = knew;
@@ -1471,7 +1470,7 @@ public class BOBYQAOptimizer
      *     by the current D and the gradient of Q at XOPT+D, staying on the trust
      *     region boundary. Termination occurs when the reduction in Q seems to
      *     be close to the greatest reduction that can be achieved.
-     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, GOPT, HQ, PQ, SL and SU
+     *     The arguments N, numberOfInterpolationPoints, XPT, XOPT, gradientAtTrustRegionCenter, HQ, PQ, SL and SU
      *     have the same meanings as the corresponding arguments of BOBYQB.
      *     DELTA is the trust region radius for the present calculation, which
      *       seeks a small value of the quadratic model within distance DELTA of
@@ -1541,7 +1540,7 @@ public class BOBYQAOptimizer
 
         // Function Body
 
-        // The sign of GOPT(I) gives the sign of the change to the I-th variable
+        // The sign of gradientAtTrustRegionCenter(I) gives the sign of the change to the I-th variable
         // that will reduce Q from its value at XOPT. Thus xbdi.get((I) shows whether
         // or not to fix the I-th variable at one of its bounds initially, with
         // NACT being set to the number of fixed variables. D and GNEW are also
@@ -2141,38 +2140,31 @@ public class BOBYQAOptimizer
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
 
-        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
+        // The call of PRELIM sets the elements of XBASE, XPT, FVAL, gradientAtTrustRegionCenter, HQ, PQ,
         // BMAT and ZMAT for the first iteration, with the corresponding values of
         // NF and KOPT, which are the number of calls of CALFUN so far and the
         // index of the interpolation point at the trust region centre. Then the
-        // initial XOPT is set too. The branch to label 720 occurs if MAXFUN is
-        // less than numberOfInterpolationPoints. GOPT will be updated if KOPT is different from KBASE.
-        prelim(lowerBound, upperBound);
-    }
-
-
-    /**
-     *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, GOPT, HQ, PQ,
-     *     BMAT and ZMAT for the first iteration, and it maintains the values of
-     *     NF and KOPT. The vector X is also changed by PRELIM.
-     *
-     *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
-     *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
-     *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
-     *       are the same as the corresponding arguments in BOBYQB, the elements
-     *       of SL and SU being set in BOBYQA.
-     *     GOPT is usually the gradient of the quadratic model at XOPT+XBASE, but
-     *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
-     *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
-     *     NF is maintaned as the number of calls of CALFUN so far.
-     *     KOPT will be such that the least calculated value of F so far is at
-     *       the point XPT(KOPT,.)+XBASE in the space of the variables.
-     *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
-     */
-    private void prelim(final double[] lowerBound,
-        final double[] upperBound) {
+        // initial XOPT is set too. gradientAtTrustRegionCenter will be updated if KOPT is different from KBASE.
+        /**
+         *     SUBROUTINE PRELIM sets the elements of XBASE, XPT, FVAL, gradientAtTrustRegionCenter, HQ, PQ,
+         *     BMAT and ZMAT for the first iteration, and it maintains the values of
+         *     NF and KOPT. The vector X is also changed by PRELIM.
+         *
+         *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
+         *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
+         *     The arguments XBASE, XPT, FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
+         *       are the same as the corresponding arguments in BOBYQB, the elements
+         *       of SL and SU being set in BOBYQA.
+         *     gradientAtTrustRegionCenter is usually the gradient of the quadratic model at XOPT+XBASE, but
+         *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
+         *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
+         *     NF is maintaned as the number of calls of CALFUN so far.
+         *     KOPT will be such that the least calculated value of F so far is at
+         *       the point XPT(KOPT,.)+XBASE in the space of the variables.
+         *
+         * @param lowerBound Lower bounds.
+         * @param upperBound Upper bounds.
+         */
         final int n = currentBest.getDimension();
         final int ndim = bMatrix.getRowDimension();
 
@@ -2332,6 +2324,8 @@ public class BOBYQAOptimizer
                 modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
             }
         } while (getEvaluations() < numberOfInterpolationPoints);
-    } // prelim
+    }
+
+    // prelim
 }
 //CHECKSTYLE: resume all
