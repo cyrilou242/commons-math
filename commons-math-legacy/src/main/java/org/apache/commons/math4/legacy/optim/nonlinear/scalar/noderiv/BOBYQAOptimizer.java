@@ -333,7 +333,6 @@ public class BOBYQAOptimizer
         double cauchy = Double.NaN;
         double alpha = Double.NaN;
         double dsq = Double.NaN;
-        double crvmin = Double.NaN;
 
         // Set some constants.
         // Parameter adjustments
@@ -430,7 +429,7 @@ public class BOBYQAOptimizer
             final double[] dsqCrvmin = trsbox(delta, gnew, xbdi, s,
                                               hs, hred);
             dsq = dsqCrvmin[0];
-            crvmin = dsqCrvmin[1];
+            final double crvmin = dsqCrvmin[1];
 
             // Computing MIN
             double deltaOne = delta;
