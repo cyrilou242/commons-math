@@ -1491,18 +1491,14 @@ public class BOBYQAOptimizer
 
         final int n = currentBest.getDimension();
 
-        double dsq = Double.NaN;
-        double crvmin = Double.NaN;
-
         // Local variables
         double ds;
         int iu;
         double dhd, dhs, cth, shs, sth, ssq, beta=0, sdec, blen;
         int iact = -1;
-        int nact = 0;
         double angt = 0, qred;
         int isav;
-        double temp = 0, xsav = 0, xsum = 0, angbd = 0, dredg = 0, sredg = 0;
+        double xsav = 0, xsum = 0, angbd = 0, dredg = 0, sredg = 0;
         int iterc;
         double resid = 0, delsq = 0, ggsav = 0, tempa = 0, tempb = 0,
         redmax = 0, dredsq = 0, redsav = 0, gredsq = 0, rednew = 0;
@@ -1522,7 +1518,7 @@ public class BOBYQAOptimizer
         // squares of the free variables. QRED is the reduction in Q so far.
 
         iterc = 0;
-        nact = 0;
+        int nact = 0;
         for (int i = 0; i < n; i++) {
             xbdi.setEntry(i, ZERO);
             if (trustRegionCenterOffset.getEntry(i) <= lowerDifference.getEntry(i)) {
@@ -1541,7 +1537,7 @@ public class BOBYQAOptimizer
         }
         delsq = delta * delta;
         qred = ZERO;
-        crvmin = MINUS_ONE;
+        double crvmin = MINUS_ONE;
 
         // Set the next search direction of the conjugate gradient method. It is
         // the steepest descent direction initially and when the iterations are
@@ -1603,7 +1599,7 @@ public class BOBYQAOptimizer
             if (resid <= ZERO) {
                 state = 90; break;
             }
-            temp = JdkMath.sqrt(stepsq * resid + ds * ds);
+            double temp = JdkMath.sqrt(stepsq * resid + ds * ds);
             if (ds < ZERO) {
                 blen = (temp - ds) / stepsq;
             } else {
@@ -1622,13 +1618,14 @@ public class BOBYQAOptimizer
             for (int i = 0; i < n; i++) {
                 if (s.getEntry(i) != ZERO) {
                     xsum = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i);
+                    final double temp2;
                     if (s.getEntry(i) > ZERO) {
-                        temp = (upperDifference.getEntry(i) - xsum) / s.getEntry(i);
+                        temp2 = (upperDifference.getEntry(i) - xsum) / s.getEntry(i);
                     } else {
-                        temp = (lowerDifference.getEntry(i) - xsum) / s.getEntry(i);
+                        temp2 = (lowerDifference.getEntry(i) - xsum) / s.getEntry(i);
                     }
-                    if (temp < stplen) {
-                        stplen = temp;
+                    if (temp2 < stplen) {
+                        stplen = temp2;
                         iact = i;
                     }
                 }
@@ -1729,7 +1726,7 @@ public class BOBYQAOptimizer
         }
         case 120: {
             ++iterc;
-            temp = gredsq * dredsq - dredg * dredg;
+            double temp = gredsq * dredsq - dredg * dredg;
             if (temp <= qred * 1e-4 * qred) {
                 state = 190; break;
             }
@@ -1770,22 +1767,22 @@ public class BOBYQAOptimizer
                     ssq = d1 * d1 + d2 * d2;
                     // Computing 2nd power
                     d1 = trustRegionCenterOffset.getEntry(i) - lowerDifference.getEntry(i);
-                    temp = ssq - d1 * d1;
-                    if (temp > ZERO) {
-                        temp = JdkMath.sqrt(temp) - s.getEntry(i);
-                        if (angbd * temp > tempa) {
-                            angbd = tempa / temp;
+                    double temp2 = ssq - d1 * d1;
+                    if (temp2 > ZERO) {
+                        temp2 = JdkMath.sqrt(temp2) - s.getEntry(i);
+                        if (angbd * temp2 > tempa) {
+                            angbd = tempa / temp2;
                             iact = i;
                             xsav = MINUS_ONE;
                         }
                     }
                     // Computing 2nd power
                     d1 = upperDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i);
-                    temp = ssq - d1 * d1;
-                    if (temp > ZERO) {
-                        temp = JdkMath.sqrt(temp) + s.getEntry(i);
-                        if (angbd * temp > tempb) {
-                            angbd = tempb / temp;
+                    double temp3 = ssq - d1 * d1;
+                    if (temp3 > ZERO) {
+                        temp3 = JdkMath.sqrt(temp3) + s.getEntry(i);
+                        if (angbd * temp3 > tempb) {
+                            angbd = tempb / temp3;
                             iact = i;
                             xsav = ONE;
                         }
@@ -1820,7 +1817,7 @@ public class BOBYQAOptimizer
             for (int i = 0; i < iu; i++) {
                 angt = angbd * i / iu;
                 sth = (angt + angt) / (ONE + angt * angt);
-                temp = shs + angt * (angt * dhd - dhs - dhs);
+                final double temp = shs + angt * (angt * dhd - dhs - dhs);
                 rednew = sth * (angt * dredg - sredg - HALF * sth * temp);
                 if (rednew > redmax) {
                     redmax = rednew;
@@ -1839,12 +1836,12 @@ public class BOBYQAOptimizer
                 state = 190; break;
             }
             if (isav < iu) {
-                temp = (rdnext - rdprev) / (redmax + redmax - rdprev - rdnext);
+                final double temp = (rdnext - rdprev) / (redmax + redmax - rdprev - rdnext);
                 angt = angbd * (isav + HALF * temp) / iu;
             }
             cth = (ONE - angt * angt) / (ONE + angt * angt);
             sth = (angt + angt) / (ONE + angt * angt);
-            temp = shs + angt * (angt * dhd - dhs - dhs);
+            final double temp = shs + angt * (angt * dhd - dhs - dhs);
             sdec = sth * (angt * dredg - sredg - HALF * sth * temp);
             if (sdec <= ZERO) {
                 state = 190; break;
@@ -1882,7 +1879,7 @@ public class BOBYQAOptimizer
             }
         }
         case 190: {
-            dsq = ZERO;
+            double dsq = ZERO;
             for (int i = 0; i < n; i++) {
                 // Computing MAX
                 // Computing MIN
