@@ -2116,7 +2116,6 @@ public class BOBYQAOptimizer
         final double fbeg = computeF(currentBest);
         trustRegionCenterInterpolationPointIndex = 0;
         fAtInterpolationPoints.setEntry(0, fbeg);
-
         for (int j = 1; j <= 2 * dimension; j++) {
             if (j <= dimension) {
                 double stepA = initialTrustRegionRadius;
