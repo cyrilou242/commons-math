@@ -2064,14 +2064,13 @@ public class BOBYQAOptimizer
                                           maxInterpolationPoints);
         }
 
-        // Initialize the data structures used by the "bobyqa" method.
-        fAtInterpolationPoints = new ArrayRealVector(numberOfInterpolationPoints);
+        // Initialize data structures used outside of this method
         trustRegionCenterOffset = new ArrayRealVector(dimension);
-        gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
         newPoint = new ArrayRealVector(dimension);
         alternativeNewPoint = new ArrayRealVector(dimension);
         trialStepPoint = new ArrayRealVector(dimension);
         lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
+        modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
 
         // Initialize bound differences: differences between the upper and lower bounds.
         final RealVector boundDifference = new ArrayRealVector(dimension);
@@ -2103,56 +2102,18 @@ public class BOBYQAOptimizer
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
 
-        // The call of PRELIM sets the elements of XBASE, interpolationPoints, FVAL,
-        // gradientAtTrustRegionCenter, HQ, PQ,
-        // BMAT and ZMAT for the first iteration, with the corresponding values of
-        // NF and KOPT, which are the number of calls of CALFUN so far and the
-        // index of the interpolation point at the trust region centre. Then the
-        // initial XOPT is set too. gradientAtTrustRegionCenter will be updated if KOPT is different from KBASE.
-        /**
-         *     SUBROUTINE PRELIM sets the elements of XBASE, interpolationPoints,
-         *     FVAL, gradientAtTrustRegionCenter, HQ, PQ,
-         *     BMAT and ZMAT for the first iteration, and it maintains the values of
-         *     NF and KOPT. The vector X is also changed by PRELIM.
-         *
-         *     The arguments N, numberOfInterpolationPoints, X, XL, XU, RHOBEG, IPRINT and MAXFUN are
-         *     the same as the corresponding arguments in SUBROUTINE BOBYQA.
-         *     The arguments XBASE, interpolationPoints,
-         *     FVAL, HQ, PQ, BMAT, ZMAT, NDIM, SL and SU
-         *       are the same as the corresponding arguments in BOBYQB, the elements
-         *       of SL and SU being set in BOBYQA.
-         *     gradientAtTrustRegionCenter is usually the gradient of the quadratic model at XOPT+XBASE, but
-         *       it is set by PRELIM to the gradient of the quadratic model at XBASE.
-         *       If XOPT is nonzero, BOBYQB will change it to its usual value later.
-         *     NF is maintaned as the number of calls of CALFUN so far.
-         *     KOPT will be such that the least calculated value of F so far is at
-         *       the point interpolationPoints(KOPT,.)+XBASE in the space of the variables.
-         *
-         * @param lowerBound Lower bounds.
-         * @param upperBound Upper bounds.
-         */
-
-        // Set XBASE to the initial vector of variables, and set the initial
-        // elements of interpolationPoints, BMAT, HQ, PQ and ZMAT to zero.
-        originShift = new ArrayRealVector(currentBest);
-        interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
-        modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
-        modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
-        bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
-            dimension);
-        zMatrix = new Array2DRowRealMatrix(numberOfInterpolationPoints,
-            numberOfInterpolationPoints - dimension - 1);
-
         // Begin the initialization procedure. NF becomes one more than the number
         // of function values so far. The coordinates of the displacement of the
         // next initial interpolation point from XBASE are set
         // in interpolationPoints(NF+1,.).
-        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
-        final double recip = 1d / rhosq;
 
-        // construct a matrix as defined in (2.2)
+        // Set originShift to the initial vector of variables
+        // Prepare the interpolationPoints matrix as defined in (2.2)
+        originShift = new ArrayRealVector(currentBest);
+        interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
+        fAtInterpolationPoints = new ArrayRealVector(numberOfInterpolationPoints);
         // first row
-        final double fbeg = computeF(currentBest);;
+        final double fbeg = computeF(currentBest);
         trustRegionCenterInterpolationPointIndex = 0;
         fAtInterpolationPoints.setEntry(0, fbeg);
 
@@ -2212,6 +2173,13 @@ public class BOBYQAOptimizer
 
         // Set the nonzero initial elements of BMAT and the quadratic model in the
         // cases when NF is at most 2*N+1.
+        modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
+        bMatrix = new Array2DRowRealMatrix(dimension + numberOfInterpolationPoints,
+            dimension);
+        zMatrix = new Array2DRowRealMatrix(numberOfInterpolationPoints,
+            numberOfInterpolationPoints - dimension - 1);
+        gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
+        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         for (int j = 1; j <= 2 * dimension; j++) {
             final double f = fAtInterpolationPoints.getEntry(j);
             if (j <= dimension) {
@@ -2250,6 +2218,7 @@ public class BOBYQAOptimizer
             }
         }
 
+        final double recip = 1d / rhosq;
         for (int j = 2 * dimension + 1; j < numberOfInterpolationPoints; j++) {
             // prepare interpolation point following (2.3)
             final int tmp1 = (j - (dimension + 1)) / dimension;
