@@ -2121,26 +2121,33 @@ public class BOBYQAOptimizer
         final double firstF = computeF(currentBest);
         trustRegionCenterInterpolationPointIndex = 0;
         fAtInterpolationPoints.setEntry(0, firstF);
-        for (int j = 1; j <= 2 * dimension; j++) {
-            if (j <= dimension) {
-                double stepA = initialTrustRegionRadius;
-                if (upperDifference.getEntry(j - 1) == ZERO) {
-                    stepA = -stepA;
-                }
-                interpolationPoints.setEntry(j, j - 1, stepA);
-            } else if (j >= dimension + 1) {
-                double stepB = -initialTrustRegionRadius;
-                if (lowerDifference.getEntry(j - dimension - 1) == ZERO) {
-                    stepB = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(
-                        j - dimension - 1));
-                }
-                if (upperDifference.getEntry(j - dimension - 1) == ZERO) {
-                    stepB = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(
-                        j - dimension - 1));
-                }
-                interpolationPoints.setEntry(j, j - dimension - 1, stepB);
+        final int rule1Max = Math.min(dimension, numberOfInterpolationPoints);
+        for (int j = 1; j <= rule1Max; j++) {
+            // prepare points as defined in (2.2), left column
+            double stepA = initialTrustRegionRadius;
+            if (upperDifference.getEntry(j - 1) == ZERO) {
+                stepA = -stepA;
             }
-            // Calculate the next value of F.
+            interpolationPoints.setEntry(j, j - 1, stepA);
+        }
+
+        final int rule2Max = Math.min(2 * dimension, numberOfInterpolationPoints);
+        for (int j = dimension + 1; j <= rule2Max; j++) {
+            // prepare points as defined in (2.2), right column
+            double stepB = -initialTrustRegionRadius;
+            if (lowerDifference.getEntry(j - dimension - 1) == ZERO) {
+                stepB = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(
+                    j - dimension - 1));
+            }
+            if (upperDifference.getEntry(j - dimension - 1) == ZERO) {
+                stepB = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(
+                    j - dimension - 1));
+            }
+            interpolationPoints.setEntry(j, j - dimension - 1, stepB);
+        }
+
+        for (int j = 1; j <= rule2Max; j++) {
+            // evaluate F for each point
             for (int i = 0; i < dimension; i++) {
                 currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBound[i],
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
@@ -2152,25 +2159,25 @@ public class BOBYQAOptimizer
             if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
                 trustRegionCenterInterpolationPointIndex = j;
             }
+        }
 
-            // If NF exceeds N+1, then the positions
-            // of the NF-th and (NF-N)-th interpolation points may be switched, in
-            // order that the function value at the first of them contributes to the
-            // off-diagonal second derivative terms of the initial quadratic model.
-            if (j >= dimension + 1) {
-                final double stepA = interpolationPoints.getEntry(j - dimension,
-                    j - dimension - 1);
-                final double fAtA = fAtInterpolationPoints.getEntry(j - dimension);
-                final double stepB = interpolationPoints.getEntry(j, j - dimension - 1);
-                if (stepA * stepB < ZERO && f < fAtA) {
-                    // swap the interpolation points
-                    interpolationPoints.setEntry(j - dimension, j - dimension - 1, stepB);
-                    interpolationPoints.setEntry(j, j - dimension - 1, stepA);
-                    fAtInterpolationPoints.setEntry(j, fAtA);
-                    fAtInterpolationPoints.setEntry(j - dimension, f);
-                    if (trustRegionCenterInterpolationPointIndex == j) {
-                        trustRegionCenterInterpolationPointIndex = j - dimension;
-                    }
+        // re-order points, with smaller values of F first, in order to bias such
+        // that the smallest function value contributes to the
+        // off-diagonal second derivative terms of the initial quadratic model.
+        for (int j = dimension + 1; j <= rule2Max; j++) {
+            final double stepA = interpolationPoints.getEntry(j - dimension,
+                j - dimension - 1);
+            final double fAtA = fAtInterpolationPoints.getEntry(j - dimension);
+            final double stepB = interpolationPoints.getEntry(j, j - dimension - 1);
+            final double f = fAtInterpolationPoints.getEntry(j);
+            if (stepA * stepB < ZERO && f < fAtA) {
+                // swap the interpolation points
+                interpolationPoints.setEntry(j - dimension, j - dimension - 1, stepB);
+                interpolationPoints.setEntry(j, j - dimension - 1, stepA);
+                fAtInterpolationPoints.setEntry(j, fAtA);
+                fAtInterpolationPoints.setEntry(j - dimension, f);
+                if (trustRegionCenterInterpolationPointIndex == j) {
+                    trustRegionCenterInterpolationPointIndex = j - dimension;
                 }
             }
         }
