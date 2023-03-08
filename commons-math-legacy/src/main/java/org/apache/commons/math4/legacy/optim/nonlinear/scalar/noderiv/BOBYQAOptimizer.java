@@ -2099,6 +2099,14 @@ public class BOBYQAOptimizer
         lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
         upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
 
+        initInterpolationPoints(lowerBound, upperBound, dimension);
+        initInterpolationMatrices(dimension);
+        // init for numberOfInterpolationPoints > 2n+1 - not recommended - see abstract
+        initAdditionalPoints(lowerBound, upperBound, dimension);
+    }
+
+    private void initInterpolationPoints(final double[] lowerBound, final double[] upperBound,
+        final int dimension) {
         // Begin the initialization procedure. NF becomes one more than the number
         // of function values so far. The coordinates of the displacement of the
         // next initial interpolation point from XBASE are set
@@ -2166,7 +2174,9 @@ public class BOBYQAOptimizer
                 }
             }
         }
+    }
 
+    private void initInterpolationMatrices(final int dimension) {
         // Set the nonzero initial elements of BMAT and the quadratic model in the
         // cases when NF is at most 2*N+1.
         modelSecondDerivativesValues = new ArrayRealVector(dimension * (dimension + 1) / 2);
@@ -2176,6 +2186,7 @@ public class BOBYQAOptimizer
             numberOfInterpolationPoints - dimension - 1);
         gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
+        final double fbeg = fAtInterpolationPoints.getEntry(0);
         for (int j = 1; j <= 2 * dimension; j++) {
             final double f = fAtInterpolationPoints.getEntry(j);
             if (j <= dimension) {
@@ -2213,8 +2224,14 @@ public class BOBYQAOptimizer
                         j - dimension - 1));
             }
         }
+    }
 
+    private void initAdditionalPoints(final double[] lowerBound, final double[] upperBound,
+        final int dimension) {
+        // add points following (2.3) and (2.4)
+        final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         final double recip = 1d / rhosq;
+        final double fbeg = fAtInterpolationPoints.getEntry(0);
         for (int j = 2 * dimension + 1; j < numberOfInterpolationPoints; j++) {
             // prepare interpolation point following (2.3)
             final int tmp1 = (j - (dimension + 1)) / dimension;
