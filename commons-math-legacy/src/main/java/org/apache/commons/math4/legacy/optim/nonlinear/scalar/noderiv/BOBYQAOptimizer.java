@@ -2118,9 +2118,9 @@ public class BOBYQAOptimizer
         interpolationPoints = new Array2DRowRealMatrix(numberOfInterpolationPoints, dimension);
         fAtInterpolationPoints = new ArrayRealVector(numberOfInterpolationPoints);
         // first row
-        final double fbeg = computeF(currentBest);
+        final double firstF = computeF(currentBest);
         trustRegionCenterInterpolationPointIndex = 0;
-        fAtInterpolationPoints.setEntry(0, fbeg);
+        fAtInterpolationPoints.setEntry(0, firstF);
         for (int j = 1; j <= 2 * dimension; j++) {
             if (j <= dimension) {
                 double stepA = initialTrustRegionRadius;
@@ -2186,12 +2186,12 @@ public class BOBYQAOptimizer
             numberOfInterpolationPoints - dimension - 1);
         gradientAtTrustRegionCenter = new ArrayRealVector(dimension);
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
-        final double fbeg = fAtInterpolationPoints.getEntry(0);
+        final double firstF = fAtInterpolationPoints.getEntry(0);
         for (int j = 1; j <= 2 * dimension; j++) {
             final double f = fAtInterpolationPoints.getEntry(j);
             if (j <= dimension) {
                 double stepA = interpolationPoints.getEntry(j, j -1);
-                gradientAtTrustRegionCenter.setEntry(j - 1, (f - fbeg) / stepA);
+                gradientAtTrustRegionCenter.setEntry(j - 1, (f - firstF) / stepA);
                 if (numberOfInterpolationPoints < j + dimension + 1) {
                     final double oneOverStepA = ONE / stepA;
                     bMatrix.setEntry(0, j - 1, -oneOverStepA);
@@ -2203,7 +2203,7 @@ public class BOBYQAOptimizer
                     j - dimension - 1);
                 final double stepB = interpolationPoints.getEntry(j, j - dimension - 1);
                 final int ih = (j - dimension) * (j - dimension + 1) / 2 - 1;
-                final double tmp = (f - fbeg) / stepB;
+                final double tmp = (f - firstF) / stepB;
                 final double diff = stepB - stepA;
                 modelSecondDerivativesValues.setEntry(ih, TWO * (tmp - gradientAtTrustRegionCenter.getEntry(
                     j - dimension - 1)) / diff);
@@ -2231,7 +2231,7 @@ public class BOBYQAOptimizer
         // add points following (2.3) and (2.4)
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         final double recip = 1d / rhosq;
-        final double fbeg = fAtInterpolationPoints.getEntry(0);
+        final double firstF = fAtInterpolationPoints.getEntry(0);
         for (int j = 2 * dimension + 1; j < numberOfInterpolationPoints; j++) {
             // prepare interpolation point following (2.3)
             final int tmp1 = (j - (dimension + 1)) / dimension;
@@ -2267,7 +2267,7 @@ public class BOBYQAOptimizer
             final int ih = ipt * (ipt - 1) / 2 + jpt - 1;
             final double tmp = interpolationPoints.getEntry(j, ipt - 1) * interpolationPoints.getEntry(
                 j, jpt - 1);
-            modelSecondDerivativesValues.setEntry(ih, (fbeg - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
+            modelSecondDerivativesValues.setEntry(ih, (firstF - fAtInterpolationPoints.getEntry(ipt) - fAtInterpolationPoints.getEntry(jpt) + f) / tmp);
         }
     }
 
