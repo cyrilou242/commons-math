@@ -455,7 +455,7 @@ public class BOBYQAOptimizer
                         bdtest = -work1.getEntry(j);
                     }
                     if (bdtest < bdtol) {
-                        double curv = modelSecondDerivativesValues.getEntry((j + j * j) / 2);
+                        double curv = modelSecondDerivativesValues.getEntry((j + 1 +  (j+1)*(j+1)) / 2 - 1);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             // Computing 2nd power
                             final double d1 = interpolationPoints.getEntry(k, j);
