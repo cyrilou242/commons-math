@@ -1488,7 +1488,7 @@ public class BOBYQAOptimizer
 
         int state = 20;
         for(;;) {
-            switch (state) {
+        goto_trsbox: switch (state) {
         case 20: {
             beta = ZERO;
         }
@@ -1683,11 +1683,11 @@ public class BOBYQAOptimizer
                     if (tempa <= ZERO) {
                         ++nact;
                         xbdi.setEntry(i, MINUS_ONE);
-                        state = 100; break;
+                        state = 100; break goto_trsbox;
                     } else if (tempb <= ZERO) {
                         ++nact;
                         xbdi.setEntry(i, ONE);
-                        state = 100; break;
+                        state = 100; break goto_trsbox;
                     }
                     ssq = power2(trialStepPoint.getEntry(i)) + power2(s.getEntry(i));
                     double temp2 = ssq - power2(trustRegionCenterOffset.getEntry(i) - lowerDifference.getEntry(i));
