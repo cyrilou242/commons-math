@@ -372,7 +372,7 @@ public class BOBYQAOptimizer
 
         int state = 20;
         for(;;) {
-        switch (state) {
+        goto_switch: switch (state) {
         case 20: {
             if (trustRegionCenterInterpolationPointIndex != kbase) {
                 int ih = 0;
@@ -428,7 +428,7 @@ public class BOBYQAOptimizer
                 deltaOne = TEN * rho;
                 distsq = deltaOne * deltaOne;
                 if (getEvaluations() <= nfsav + 2) {
-                    state = 650; break;
+                    state = 650; break goto_switch;
                 }
 
                 // The following choice between labels 650 and 680 depends on whether or
@@ -443,7 +443,7 @@ public class BOBYQAOptimizer
                 final double frhosq = rho * ONE_OVER_EIGHT * rho;
                 if (crvmin > ZERO &&
                     errbig > frhosq * crvmin) {
-                    state = 650; break;
+                    state = 650; break goto_switch;
                 }
                 final double bdtol = errbig / rho;
                 for (int j = 0; j < dimension; j++) {
@@ -463,11 +463,11 @@ public class BOBYQAOptimizer
                         }
                         bdtest += HALF * curv * rho;
                         if (bdtest < bdtol) {
-                            state = 650; break;
+                            state = 650; break goto_switch;
                         }
                     }
                 }
-                state = 680; break;
+                state = 680; break goto_switch;
             }
             ++ntrits;
 
@@ -568,9 +568,9 @@ public class BOBYQAOptimizer
                 xoptsq = ZERO;
             }
             if (ntrits == 0) {
-                state = 210; break;
+                state = 210; break goto_switch;
             }
-            state = 230; break;
+            state = 230; break goto_switch;
 
             // XBASE is also moved to XOPT by a call of RESCUE. This calculation is
             // more expensive than the previous shift, because new matrices BMAT and
@@ -672,7 +672,7 @@ public class BOBYQAOptimizer
                         trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
                     }
                     cauchy = ZERO; // XXX Useful statement?
-                    state = 230; break;
+                    state = 230; break goto_switch;
                 }
                 // Alternatively, if NTRITS is positive, then set KNEW to the index of
                 // the next interpolation point to be deleted to make room for a trust
@@ -735,7 +735,7 @@ public class BOBYQAOptimizer
 
             if (ntrits == -1) {
                 fsave = f;
-                state = 720; break;
+                state = 720; break goto_switch;
             }
 
             // Use the quadratic model to predict the change in F due to the step D,
@@ -1005,10 +1005,10 @@ public class BOBYQAOptimizer
             // when the new interpolation point was reached by an alternative step.
 
             if (ntrits == 0) {
-                state = 60; break;
+                state = 60; break goto_switch;
             }
             if (f <= fopt + ONE_OVER_TEN * vquad) {
-                state = 60; break;
+                state = 60; break goto_switch;
             }
 
             // Alternatively, find out if the interpolation points are close enough
@@ -1057,16 +1057,16 @@ public class BOBYQAOptimizer
                 final double d1 = JdkMath.min(ONE_OVER_TEN * dist, delta);
                 adelt = JdkMath.max(d1, rho);
                 dsq = adelt * adelt;
-                state = 90; break;
+                state = 90; break goto_switch;
             }
             if (ntrits == -1) {
-                state = 680; break;
+                state = 680; break goto_switch;
             }
             if (ratio > ZERO) {
-                state = 60; break;
+                state = 60; break goto_switch;
             }
             if (JdkMath.max(delta, dnorm) > rho) {
-                state = 60; break;
+                state = 60; break goto_switch;
             }
 
             // The calculations with the current value of RHO are complete. Pick the
@@ -1086,14 +1086,14 @@ public class BOBYQAOptimizer
                 delta = JdkMath.max(delta, rho);
                 ntrits = 0;
                 nfsav = getEvaluations();
-                state = 60; break;
+                state = 60; break goto_switch;
             }
 
             // Return from the calculation, after another Newton-Raphson step, if
             //   it is too short to have been tried before.
 
             if (ntrits == -1) {
-                state = 360; break;
+                state = 360; break goto_switch;
             }
         }
         case 720: {

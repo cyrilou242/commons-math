@@ -101,7 +101,7 @@ public class BOBYQAOptimizerTest {
         PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
             GoalType.MINIMIZE,
-            1e-13, 1e-6, 3000, expected, 1765, 1765);
+            1e-13, 1e-6, 3000, expected, 1700, 1700);
     }
 
     @Test
