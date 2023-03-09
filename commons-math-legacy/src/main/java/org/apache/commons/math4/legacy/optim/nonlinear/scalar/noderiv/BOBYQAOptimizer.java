@@ -203,6 +203,16 @@ public class BOBYQAOptimizer
     private ArrayRealVector modelSecondDerivativesValues;
 
     /**
+     * Lower bounds (constraints) of the objective variables.
+     */
+    private ArrayRealVector lowerBounds;
+
+    /**
+     * Upper bounds (constraints) of the objective variables.
+     */
+    private ArrayRealVector upperBounds;
+
+    /**
      * @param numberOfInterpolationPoints Number of interpolation conditions.
      * For a problem of dimension {@code n}, its value must be in the interval
      * {@code [n+2, (n+1)(n+2)/2]}.
@@ -263,12 +273,12 @@ public class BOBYQAOptimizer
     /** {@inheritDoc} */
     @Override
     protected PointValuePair doOptimize() {
-        final double[] lowerBound = getLowerBound();
-        final double[] upperBound = getUpperBound();
+        lowerBounds = new ArrayRealVector(getLowerBound(), false);
+        upperBounds = new ArrayRealVector(getUpperBound(), false);
 
-        init(lowerBound, upperBound);
+        init();
 
-        final double optimum = bobyqb(lowerBound, upperBound);
+        final double optimum = bobyqb();
 
         return new PointValuePair(currentBest.getDataRef(),
             (getGoalType().equals(GoalType.MINIMIZE)) ? optimum : -optimum);
@@ -310,12 +320,9 @@ public class BOBYQAOptimizer
      *     W is a one-dimensional array that is used for working space. Its length
      *       must be at least 3*NDIM = 3*(numberOfInterpolationPoints+N).
      *
-     * @param lowerBound Lower bounds.
-     * @param upperBound Upper bounds.
      * @return the value of the objective at the optimum.
      */
-    private double bobyqb(final double[] lowerBound,
-                          final double[] upperBound) {
+    private double bobyqb() {
         // Set some constants.
         final int n = currentBest.getDimension();
         final int np = n + 1;
@@ -723,7 +730,7 @@ public class BOBYQAOptimizer
         case 360: {
             for (int i = 0; i < n; i++) {
                 final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
-                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
+                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                 currentBest.setEntry(i, boundedNewBest);
             }
             f = computeF(currentBest);
@@ -1095,7 +1102,7 @@ public class BOBYQAOptimizer
             if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
                 for (int i = 0; i < n; i++) {
                     final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
-                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBound[i], newBest), upperBound[i]);
+                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                     currentBest.setEntry(i, boundedNewBest);
                 }
                 f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
@@ -2038,11 +2045,8 @@ public class BOBYQAOptimizer
 
     /**
      * Performs validity checks and initializes fields.
-     *
-     * @param lowerBound Lower bounds (constraints) of the objective variables.
-     * @param upperBound Upperer bounds (constraints) of the objective variables.
      */
-    private void init(final double[] lowerBound, final double[] upperBound) {
+    private void init() {
         currentBest = new ArrayRealVector(getStartPoint());
         final int dimension = currentBest.getDimension();
 
@@ -2070,10 +2074,7 @@ public class BOBYQAOptimizer
         modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
 
         // Initialize bound differences: differences between the upper and lower bounds.
-        final RealVector boundDifference = new ArrayRealVector(dimension);
-        for (int i = 0; i < dimension; i++) {
-            boundDifference.setEntry(i,upperBound[i] - lowerBound[i]);
-        }
+        final RealVector boundDifference = upperBounds.subtract(lowerBounds);
         final double requiredMinDiff = 2 * initialTrustRegionRadius;
         final double minDiff = boundDifference.getMinValue();
         if (minDiff < requiredMinDiff) {
@@ -2083,30 +2084,29 @@ public class BOBYQAOptimizer
         // bounds and the construction of the first quadratic model.
         for (int i = 0; i < dimension; i++) {
             final double xi = currentBest.getEntry(i);
-            if (xi <= lowerBound[i]) {
-                currentBest.setEntry(i, lowerBound[i]);
-            } else if (xi < lowerBound[i] + initialTrustRegionRadius) {
-                currentBest.setEntry(i, lowerBound[i] + initialTrustRegionRadius);
-            } else if (xi >= upperBound[i]) {
-                currentBest.setEntry(i, upperBound[i]);
-            } else if (xi > upperBound[i] - initialTrustRegionRadius) {
-                currentBest.setEntry(i, upperBound[i] - initialTrustRegionRadius);
+            if (xi <= lowerBounds.getEntry(i)) {
+                currentBest.setEntry(i, lowerBounds.getEntry(i));
+            } else if (xi < lowerBounds.getEntry(i) + initialTrustRegionRadius) {
+                currentBest.setEntry(i, lowerBounds.getEntry(i) + initialTrustRegionRadius);
+            } else if (xi >= upperBounds.getEntry(i)) {
+                currentBest.setEntry(i, upperBounds.getEntry(i));
+            } else if (xi > upperBounds.getEntry(i) - initialTrustRegionRadius) {
+                currentBest.setEntry(i, upperBounds.getEntry(i) - initialTrustRegionRadius);
             }
         }
         // The lower and upper bounds on moves from the updated X are set now, in the ISL and ISU
         // partitions of W, in order to provide useful and exact information about
         // components of X that become within distance RHOBEG from their bounds.
-        lowerDifference = new ArrayRealVector(lowerBound).subtract(currentBest);
-        upperDifference = new ArrayRealVector(upperBound).subtract(currentBest);
+        lowerDifference = lowerBounds.subtract(currentBest);
+        upperDifference = upperBounds.subtract(currentBest);
 
-        initInterpolationPoints(lowerBound, upperBound, dimension);
+        initInterpolationPoints(dimension);
         initInterpolationMatrices(dimension);
         // init for numberOfInterpolationPoints > 2n+1 - not recommended - see abstract
-        initAdditionalPoints(lowerBound, upperBound, dimension);
+        initAdditionalPoints(dimension);
     }
 
-    private void initInterpolationPoints(final double[] lowerBound, final double[] upperBound,
-        final int dimension) {
+    private void initInterpolationPoints(final int dimension) {
         // Begin the initialization procedure. NF becomes one more than the number
         // of function values so far. The coordinates of the displacement of the
         // next initial interpolation point from XBASE are set
@@ -2150,9 +2150,9 @@ public class BOBYQAOptimizer
         // evaluate F for each point
         for (int j = 1; j <= ruleBMax; j++) {
             for (int k = 0; k < dimension; k++) {
-                currentBest.setEntry(k, JdkMath.min(JdkMath.max(lowerBound[k],
+                currentBest.setEntry(k, JdkMath.min(JdkMath.max(lowerBounds.getEntry(k),
                         originShift.getEntry(k) + interpolationPoints.getEntry(j, k)),
-                    upperBound[k]));
+                    upperBounds.getEntry(k)));
             }
             final double f = computeF(currentBest);
 
@@ -2235,8 +2235,7 @@ public class BOBYQAOptimizer
         }
     }
 
-    private void initAdditionalPoints(final double[] lowerBound, final double[] upperBound,
-        final int dimension) {
+    private void initAdditionalPoints(final int dimension) {
         // add points following (2.3) and (2.4)
         final double rhosq = initialTrustRegionRadius * initialTrustRegionRadius;
         final double recip = 1d / rhosq;
@@ -2256,9 +2255,9 @@ public class BOBYQAOptimizer
 
             // Calculate the next value of F.
             for (int i = 0; i < dimension; i++) {
-                currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBound[i],
+                currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBounds.getEntry(i),
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
-                    upperBound[i]));
+                    upperBounds.getEntry(i)));
             }
             final double f = computeF(currentBest);
             fAtInterpolationPoints.setEntry(j, f);
