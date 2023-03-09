@@ -212,6 +212,8 @@ public class BOBYQAOptimizer
      */
     private ArrayRealVector upperBounds;
 
+    private int dimension;
+
     /**
      * @param numberOfInterpolationPoints Number of interpolation conditions.
      * For a problem of dimension {@code n}, its value must be in the interval
@@ -321,12 +323,11 @@ public class BOBYQAOptimizer
      */
     private double bobyqb() {
         // Set some constants.
-        final int n = currentBest.getDimension();
-        final int np = n + 1;
+        final int np = dimension + 1;
         final int nptm = numberOfInterpolationPoints - np;
-        final int nh = n * np / 2;
+        final int nh = dimension * np / 2;
 
-        final ArrayRealVector work1 = new ArrayRealVector(n);
+        final ArrayRealVector work1 = new ArrayRealVector(dimension);
         final ArrayRealVector work2 = new ArrayRealVector(numberOfInterpolationPoints);
         final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
 
@@ -336,7 +337,7 @@ public class BOBYQAOptimizer
 
         // Parameter adjustments
         double xoptsq = ZERO;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < dimension; i++) {
             trustRegionCenterOffset.setEntry(i, interpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex, i));
             // Computing 2nd power
             final double deltaOne = trustRegionCenterOffset.getEntry(i);
@@ -375,7 +376,7 @@ public class BOBYQAOptimizer
         case 20: {
             if (trustRegionCenterInterpolationPointIndex != kbase) {
                 int ih = 0;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     for (int i = 0; i <= j; i++) {
                         if (i < j) {
                             gradientAtTrustRegionCenter.setEntry(j, gradientAtTrustRegionCenter.getEntry(j) + modelSecondDerivativesValues.getEntry(ih) * trustRegionCenterOffset.getEntry(i));
@@ -387,11 +388,11 @@ public class BOBYQAOptimizer
                 if (getEvaluations() > numberOfInterpolationPoints) {
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         double temp = ZERO;
-                        for (int j = 0; j < n; j++) {
+                        for (int j = 0; j < dimension; j++) {
                             temp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                         }
                         temp *= modelSecondDerivativesParameters.getEntry(k);
-                        for (int i = 0; i < n; i++) {
+                        for (int i = 0; i < dimension; i++) {
                             gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
                         }
                     }
@@ -406,11 +407,11 @@ public class BOBYQAOptimizer
             // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
         }
         case 60: {
-            final ArrayRealVector gnew = new ArrayRealVector(n);
-            final ArrayRealVector xbdi = new ArrayRealVector(n);
-            final ArrayRealVector s = new ArrayRealVector(n);
-            final ArrayRealVector hs = new ArrayRealVector(n);
-            final ArrayRealVector hred = new ArrayRealVector(n);
+            final ArrayRealVector gnew = new ArrayRealVector(dimension);
+            final ArrayRealVector xbdi = new ArrayRealVector(dimension);
+            final ArrayRealVector s = new ArrayRealVector(dimension);
+            final ArrayRealVector hs = new ArrayRealVector(dimension);
+            final ArrayRealVector hred = new ArrayRealVector(dimension);
 
             final double[] dsqCrvmin = trsbox(delta, gnew, xbdi, s,
                                               hs, hred);
@@ -445,7 +446,7 @@ public class BOBYQAOptimizer
                     state = 650; break;
                 }
                 final double bdtol = errbig / rho;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     double bdtest = bdtol;
                     if (newPoint.getEntry(j) == lowerDifference.getEntry(j)) {
                         bdtest = work1.getEntry(j);
@@ -485,13 +486,13 @@ public class BOBYQAOptimizer
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sumpq += modelSecondDerivativesParameters.getEntry(k);
                     double sum = -HALF * xoptsq;
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         sum += interpolationPoints.getEntry(k, i) * trustRegionCenterOffset.getEntry(i);
                     }
                     // sum = sumVector.getEntry(k); // XXX "testAckley" and "testDiffPow" fail.
                     work2.setEntry(k, sum);
                     final double temp = fracsq - HALF * sum;
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         work1.setEntry(i, bMatrix.getEntry(k, i));
                         lagrangeValuesAtNewPoint.setEntry(i, sum * interpolationPoints.getEntry(k, i) + temp * trustRegionCenterOffset.getEntry(i));
                         final int ip = numberOfInterpolationPoints + i;
@@ -514,7 +515,7 @@ public class BOBYQAOptimizer
                         lagrangeValuesAtNewPoint.setEntry(k, work2.getEntry(k) * zMatrix.getEntry(k, m));
                         sumw += lagrangeValuesAtNewPoint.getEntry(k);
                     }
-                    for (int j = 0; j < n; j++) {
+                    for (int j = 0; j < dimension; j++) {
                         double sum = (fracsq * sumz - HALF * sumw) * trustRegionCenterOffset.getEntry(j);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             sum += lagrangeValuesAtNewPoint.getEntry(k) * interpolationPoints.getEntry(k, j);
@@ -526,7 +527,7 @@ public class BOBYQAOptimizer
                                           + sum * zMatrix.getEntry(k, m));
                         }
                     }
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         final int ip = i + numberOfInterpolationPoints;
                         final double temp = work1.getEntry(i);
                         for (int j = 0; j <= i; j++) {
@@ -541,7 +542,7 @@ public class BOBYQAOptimizer
                 // to the second derivative parameters of the quadratic model.
 
                 int ih = 0;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     work1.setEntry(j, -HALF * sumpq * trustRegionCenterOffset.getEntry(j));
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         work1.setEntry(j, work1.getEntry(j) + modelSecondDerivativesParameters.getEntry(k) * interpolationPoints.getEntry(k, j));
@@ -557,7 +558,7 @@ public class BOBYQAOptimizer
                         ih++;
                     }
                 }
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     originShift.setEntry(i, originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i));
                     newPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
                     lowerDifference.setEntry(i, lowerDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i));
@@ -596,7 +597,7 @@ public class BOBYQAOptimizer
             alpha = alphaCauchy[0];
             cauchy = alphaCauchy[1];
 
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
             }
 
@@ -609,7 +610,7 @@ public class BOBYQAOptimizer
                 double suma = ZERO;
                 double sumb = ZERO;
                 double sum = ZERO;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     suma += interpolationPoints.getEntry(k, j) * trialStepPoint.getEntry(j);
                     sumb += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                     sum += bMatrix.getEntry(k, j) * trialStepPoint.getEntry(j);
@@ -632,7 +633,7 @@ public class BOBYQAOptimizer
             dsq = ZERO;
             double bsum = ZERO;
             double dx = ZERO;
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < dimension; j++) {
                 // Computing 2nd power
                 final double d1 = trialStepPoint.getEntry(j);
                 dsq += d1 * d1;
@@ -642,7 +643,7 @@ public class BOBYQAOptimizer
                 }
                 bsum += sum * trialStepPoint.getEntry(j);
                 final int jp = numberOfInterpolationPoints + j;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     sum += bMatrix.getEntry(jp, i) * trialStepPoint.getEntry(i);
                 }
                 lagrangeValuesAtNewPoint.setEntry(jp, sum);
@@ -666,7 +667,7 @@ public class BOBYQAOptimizer
                 final double d1 = lagrangeValuesAtNewPoint.getEntry(knew);
                 denom = d1 * d1 + alpha * beta;
                 if (denom < cauchy && cauchy > ZERO) {
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         newPoint.setEntry(i, alternativeNewPoint.getEntry(i));
                         trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
                     }
@@ -697,7 +698,7 @@ public class BOBYQAOptimizer
                     final double d2 = lagrangeValuesAtNewPoint.getEntry(k);
                     final double den = beta * hdiag + d2 * d2;
                     distsq = ZERO;
-                    for (int j = 0; j < n; j++) {
+                    for (int j = 0; j < dimension; j++) {
                         // Computing 2nd power
                         final double d3 = interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j);
                         distsq += d3 * d3;
@@ -725,7 +726,7 @@ public class BOBYQAOptimizer
             //   the limit on the number of calculations of F has been reached.
         }
         case 360: {
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                 currentBest.setEntry(i, boundedNewBest);
@@ -743,7 +744,7 @@ public class BOBYQAOptimizer
             final double fopt = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
             double vquad = ZERO;
             int ih = 0;
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < dimension; j++) {
                 vquad += trialStepPoint.getEntry(j) * gradientAtTrustRegionCenter.getEntry(j);
                 for (int i = 0; i <= j; i++) {
                     double temp = trialStepPoint.getEntry(i) * trialStepPoint.getEntry(j);
@@ -810,7 +811,7 @@ public class BOBYQAOptimizer
                         final double d1 = lagrangeValuesAtNewPoint.getEntry(k);
                         final double den = beta * hdiag + d1 * d1;
                         distsq = ZERO;
-                        for (int j = 0; j < n; j++) {
+                        for (int j = 0; j < dimension; j++) {
                             // Computing 2nd power
                             final double d2 = interpolationPoints.getEntry(k, j) - newPoint.getEntry(j);
                             distsq += d2 * d2;
@@ -845,7 +846,7 @@ public class BOBYQAOptimizer
             ih = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(knew);
             modelSecondDerivativesParameters.setEntry(knew, ZERO);
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double temp = pqold * interpolationPoints.getEntry(knew, i);
                 for (int j = 0; j <= i; j++) {
                     modelSecondDerivativesValues.setEntry(ih, modelSecondDerivativesValues.getEntry(ih) + temp * interpolationPoints.getEntry(knew, j));
@@ -863,7 +864,7 @@ public class BOBYQAOptimizer
             // the old XOPT that are caused by the updating of the quadratic model.
 
             fAtInterpolationPoints.setEntry(knew,  f);
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 interpolationPoints.setEntry(knew, i, newPoint.getEntry(i));
                 work1.setEntry(i, bMatrix.getEntry(knew, i));
             }
@@ -873,15 +874,15 @@ public class BOBYQAOptimizer
                     suma += zMatrix.getEntry(knew, m) * zMatrix.getEntry(k, m);
                 }
                 double sumb = ZERO;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     sumb += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                 }
                 final double temp = suma * sumb;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     work1.setEntry(i, work1.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
                 }
             }
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + diff * work1.getEntry(i));
             }
 
@@ -891,7 +892,7 @@ public class BOBYQAOptimizer
                 trustRegionCenterInterpolationPointIndex = knew;
                 xoptsq = ZERO;
                 ih = 0;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     trustRegionCenterOffset.setEntry(j, newPoint.getEntry(j));
                     // Computing 2nd power
                     final double d1 = trustRegionCenterOffset.getEntry(j);
@@ -906,11 +907,11 @@ public class BOBYQAOptimizer
                 }
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double temp = ZERO;
-                    for (int j = 0; j < n; j++) {
+                    for (int j = 0; j < dimension; j++) {
                         temp += interpolationPoints.getEntry(k, j) * trialStepPoint.getEntry(j);
                     }
                     temp *= modelSecondDerivativesParameters.getEntry(k);
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
                     }
                 }
@@ -936,7 +937,7 @@ public class BOBYQAOptimizer
                 }
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double sum = ZERO;
-                    for (int j = 0; j < n; j++) {
+                    for (int j = 0; j < dimension; j++) {
                         sum += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                     }
                     work2.setEntry(k, work3.getEntry(k));
@@ -944,7 +945,7 @@ public class BOBYQAOptimizer
                 }
                 double gqsq = ZERO;
                 double gisq = ZERO;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += bMatrix.getEntry(k, i) *
@@ -984,7 +985,7 @@ public class BOBYQAOptimizer
                 }
                 if (itest >= 3) {
                     for (int i = 0, max = JdkMath.max(numberOfInterpolationPoints, nh); i < max; i++) {
-                        if (i < n) {
+                        if (i < dimension) {
                             gradientAtTrustRegionCenter.setEntry(i, lagrangeValuesAtNewPoint.getEntry(
                                 numberOfInterpolationPoints + i));
                         }
@@ -1024,7 +1025,7 @@ public class BOBYQAOptimizer
             knew = -1;
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double sum = ZERO;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     // Computing 2nd power
                     final double d1 = interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j);
                     sum += d1 * d1;
@@ -1097,7 +1098,7 @@ public class BOBYQAOptimizer
         }
         case 720: {
             if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
                     final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                     currentBest.setEntry(i, boundedNewBest);
@@ -1151,10 +1152,9 @@ public class BOBYQAOptimizer
             final int knew,
             final double adelt
     ) {
-        final int n = currentBest.getDimension();
 
         final ArrayRealVector hcol = new ArrayRealVector(numberOfInterpolationPoints);
-        for (int j = 0, max = numberOfInterpolationPoints - n - 1; j < max; j++) {
+        for (int j = 0, max = numberOfInterpolationPoints - dimension - 1; j < max; j++) {
             final double tmp = zMatrix.getEntry(knew, j);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 hcol.setEntry(k, hcol.getEntry(k) + tmp * zMatrix.getEntry(k, j));
@@ -1165,11 +1165,11 @@ public class BOBYQAOptimizer
         final RealVector glag = bMatrix.getRowVector(knew);
         for (int k = 0; k < numberOfInterpolationPoints; k++) {
             double tmp = ZERO;
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < dimension; j++) {
                 tmp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
             }
             tmp *= hcol.getEntry(k);
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 glag.setEntry(i, glag.getEntry(i) + tmp * interpolationPoints.getEntry(k, i));
             }
         }
@@ -1193,7 +1193,7 @@ public class BOBYQAOptimizer
             }
             double dderiv = ZERO;
             double distsq = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double tmp = interpolationPoints.getEntry(k, i) - trustRegionCenterOffset.getEntry(i);
                 dderiv += glag.getEntry(i) * tmp;
                 distsq += tmp * tmp;
@@ -1206,7 +1206,7 @@ public class BOBYQAOptimizer
 
             // Revise SLBD and SUBD if necessary because of the bounds in SL and SU.
 
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double tmp = interpolationPoints.getEntry(k, i) - trustRegionCenterOffset.getEntry(i);
                 if (tmp > ZERO) {
                     if (slbd * tmp < lowerDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i)) {
@@ -1291,7 +1291,7 @@ public class BOBYQAOptimizer
 
         // Construct XNEW in a way that satisfies the bound constraints exactly.
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < dimension; i++) {
             final double tmp = trustRegionCenterOffset.getEntry(i) + stpsav * (interpolationPoints.getEntry(ksav, i) - trustRegionCenterOffset.getEntry(i));
             newPoint.setEntry(i, JdkMath.max(lowerDifference.getEntry(i),
                                               JdkMath.min(upperDifference.getEntry(i), tmp)));
@@ -1311,12 +1311,12 @@ public class BOBYQAOptimizer
         int iflag = 0;
         double cauchy = Double.NaN;
         double csave = ZERO;
-        final ArrayRealVector work1 = new ArrayRealVector(n);
-        final ArrayRealVector work2 = new ArrayRealVector(n);
+        final ArrayRealVector work1 = new ArrayRealVector(dimension);
+        final ArrayRealVector work2 = new ArrayRealVector(dimension);
         while (true) {
             double wfixsq = ZERO;
             double ggfree = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double glagValue = glag.getEntry(i);
                 work1.setEntry(i, ZERO);
                 if (JdkMath.min(trustRegionCenterOffset.getEntry(i) - lowerDifference.getEntry(i), glagValue) > ZERO ||
@@ -1335,7 +1335,7 @@ public class BOBYQAOptimizer
             if (tmp1 > ZERO) {
                 step = JdkMath.sqrt(tmp1 / ggfree);
                 ggfree = ZERO;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     if (work1.getEntry(i) == bigstp) {
                         final double tmp2 = trustRegionCenterOffset.getEntry(i) - step * glag.getEntry(i);
                         if (tmp2 <= lowerDifference.getEntry(i)) {
@@ -1361,7 +1361,7 @@ public class BOBYQAOptimizer
             // except that W may be scaled later.
 
             double gw = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 final double glagValue = glag.getEntry(i);
                 if (work1.getEntry(i) == bigstp) {
                     work1.setEntry(i, -step * glagValue);
@@ -1386,7 +1386,7 @@ public class BOBYQAOptimizer
             double curv = ZERO;
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double tmp = ZERO;
-                for (int j = 0; j < n; j++) {
+                for (int j = 0; j < dimension; j++) {
                     tmp += interpolationPoints.getEntry(k, j) * work1.getEntry(j);
                 }
                 curv += hcol.getEntry(k) * tmp * tmp;
@@ -1397,7 +1397,7 @@ public class BOBYQAOptimizer
             if (curv > -gw &&
                 curv < -gw * (ONE + JdkMath.sqrt(TWO))) {
                 final double scale = -gw / curv;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     final double tmp = trustRegionCenterOffset.getEntry(i) + scale * work1.getEntry(i);
                     alternativeNewPoint.setEntry(i, JdkMath.max(lowerDifference.getEntry(i),
                                                     JdkMath.min(upperDifference.getEntry(i), tmp)));
@@ -1416,7 +1416,7 @@ public class BOBYQAOptimizer
             // is chosen is the one that gives the larger value of CAUCHY.
 
             if (iflag == 0) {
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     glag.setEntry(i, -glag.getEntry(i));
                     work2.setEntry(i, alternativeNewPoint.getEntry(i));
                 }
@@ -1427,7 +1427,7 @@ public class BOBYQAOptimizer
             }
         }
         if (csave > cauchy) {
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 alternativeNewPoint.setEntry(i, work2.getEntry(i));
             }
             cauchy = csave;
@@ -1493,8 +1493,6 @@ public class BOBYQAOptimizer
             final ArrayRealVector hred
     ) {
 
-        final int n = currentBest.getDimension();
-
         // Local variables
         double ds;
         int iu;
@@ -1523,7 +1521,7 @@ public class BOBYQAOptimizer
 
         iterc = 0;
         int nact = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < dimension; i++) {
             xbdi.setEntry(i, ZERO);
             if (trustRegionCenterOffset.getEntry(i) <= lowerDifference.getEntry(i)) {
                 if (gradientAtTrustRegionCenter.getEntry(i) >= ZERO) {
@@ -1557,7 +1555,7 @@ public class BOBYQAOptimizer
         }
         case 30: {
             stepsq = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) != ZERO) {
                     s.setEntry(i, ZERO);
                 } else if (beta == ZERO) {
@@ -1574,7 +1572,7 @@ public class BOBYQAOptimizer
             }
             if (beta == ZERO) {
                 gredsq = stepsq;
-                itermax = iterc + n - nact;
+                itermax = iterc + dimension - nact;
             }
             if (gredsq * delsq <= qred * 1e-4 * qred) {
                 state = 190; break;
@@ -1591,7 +1589,7 @@ public class BOBYQAOptimizer
             resid = delsq;
             ds = ZERO;
             shs = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     // Computing 2nd power
                     final double d1 = trialStepPoint.getEntry(i);
@@ -1619,7 +1617,7 @@ public class BOBYQAOptimizer
             // letting IACT be the index of the new constrained variable.
 
             iact = -1;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (s.getEntry(i) != ZERO) {
                     xsum = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i);
                     final double temp2;
@@ -1649,7 +1647,7 @@ public class BOBYQAOptimizer
                 }
                 ggsav = gredsq;
                 gredsq = ZERO;
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < dimension; i++) {
                     gnew.setEntry(i, gnew.getEntry(i) + stplen * hs.getEntry(i));
                     if (xbdi.getEntry(i) == ZERO) {
                         // Computing 2nd power
@@ -1703,13 +1701,13 @@ public class BOBYQAOptimizer
             // Q, where S holds the reduced D in the call of GGMULT.
         }
         case 100: {
-            if (nact >= n - 1) {
+            if (nact >= dimension - 1) {
                 state = 190; break;
             }
             dredsq = ZERO;
             dredg = ZERO;
             gredsq = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     // Computing 2nd power
                     double d1 = trialStepPoint.getEntry(i);
@@ -1735,7 +1733,7 @@ public class BOBYQAOptimizer
                 state = 190; break;
             }
             temp = JdkMath.sqrt(temp);
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     s.setEntry(i, (dredg * trialStepPoint.getEntry(i) - dredsq * gnew.getEntry(i)) / temp);
                 } else {
@@ -1751,7 +1749,7 @@ public class BOBYQAOptimizer
 
             angbd = ONE;
             iact = -1;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     tempa = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i) - lowerDifference.getEntry(i);
                     tempb = upperDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i) - trialStepPoint.getEntry(i);
@@ -1802,7 +1800,7 @@ public class BOBYQAOptimizer
             shs = ZERO;
             dhs = ZERO;
             dhd = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     shs += s.getEntry(i) * hs.getEntry(i);
                     dhs += trialStepPoint.getEntry(i) * hs.getEntry(i);
@@ -1857,7 +1855,7 @@ public class BOBYQAOptimizer
 
             dredg = ZERO;
             gredsq = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 gnew.setEntry(i, gnew.getEntry(i) + (cth - ONE) * hred.getEntry(i) + sth * hs.getEntry(i));
                 if (xbdi.getEntry(i) == ZERO) {
                     trialStepPoint.setEntry(i, cth * trialStepPoint.getEntry(i) + sth * s.getEntry(i));
@@ -1884,7 +1882,7 @@ public class BOBYQAOptimizer
         }
         case 190: {
             double dsq = ZERO;
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 // Computing MAX
                 // Computing MIN
                 final double min = JdkMath.min(trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i),
@@ -1909,7 +1907,7 @@ public class BOBYQAOptimizer
         }
         case 210: {
             int ih = 0;
-            for (int j = 0; j < n; j++) {
+            for (int j = 0; j < dimension; j++) {
                 hs.setEntry(j, ZERO);
                 for (int i = 0; i <= j; i++) {
                     if (i < j) {
@@ -1922,7 +1920,7 @@ public class BOBYQAOptimizer
             final RealVector tmp = interpolationPoints.operate(s).ebeMultiply(modelSecondDerivativesParameters);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 if (modelSecondDerivativesParameters.getEntry(k) != ZERO) {
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < dimension; i++) {
                         hs.setEntry(i, hs.getEntry(i) + tmp.getEntry(k) * interpolationPoints.getEntry(k, i));
                     }
                 }
@@ -1933,7 +1931,7 @@ public class BOBYQAOptimizer
             if (iterc > itcsav) {
                 state = 150; break;
             }
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < dimension; i++) {
                 hred.setEntry(i, hs.getEntry(i));
             }
             state = 120; break;
@@ -1966,12 +1964,11 @@ public class BOBYQAOptimizer
             final int knew
     ) {
 
-        final int n = currentBest.getDimension();
         final int npt = numberOfInterpolationPoints;
-        final int nptm = npt - n - 1;
+        final int nptm = npt - dimension - 1;
 
         // XXX Should probably be split into two arrays.
-        final ArrayRealVector work = new ArrayRealVector(npt + n);
+        final ArrayRealVector work = new ArrayRealVector(npt + dimension);
 
         double ztest = ZERO;
         for (int k = 0; k < npt; k++) {
@@ -2025,7 +2022,7 @@ public class BOBYQAOptimizer
 
         // Finally, update the matrix BMAT.
 
-        for (int j = 0; j < n; j++) {
+        for (int j = 0; j < dimension; j++) {
             final int jp = npt + j;
             work.setEntry(jp, bMatrix.getEntry(knew, j));
             final double d3 = (alpha * lagrangeValuesAtNewPoint.getEntry(jp) - tau * work.getEntry(jp)) / denom;
@@ -2047,7 +2044,7 @@ public class BOBYQAOptimizer
         lowerBounds = new ArrayRealVector(getLowerBound(), false);
         upperBounds = new ArrayRealVector(getUpperBound(), false);
         currentBest = new ArrayRealVector(getStartPoint());
-        final int dimension = currentBest.getDimension();
+        dimension = currentBest.getDimension();
 
         // Check problem dimension.
         if (dimension < MINIMUM_PROBLEM_DIMENSION) {
