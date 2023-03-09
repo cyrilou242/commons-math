@@ -2145,7 +2145,6 @@ public class BOBYQAOptimizer
             } else {
                 interpolationPoints.setEntry(j, j - dimension - 1, -initialTrustRegionRadius);
             }
-
         }
 
         // evaluate F for each point
