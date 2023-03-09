@@ -2121,33 +2121,35 @@ public class BOBYQAOptimizer
         final double firstF = computeF(currentBest);
         trustRegionCenterInterpolationPointIndex = 0;
         fAtInterpolationPoints.setEntry(0, firstF);
+        // prepare points as defined in (2.2), left column
         final int rule1Max = Math.min(dimension, numberOfInterpolationPoints);
         for (int j = 1; j <= rule1Max; j++) {
-            // prepare points as defined in (2.2), left column
-            double stepA = initialTrustRegionRadius;
             if (upperDifference.getEntry(j - 1) == ZERO) {
-                stepA = -stepA;
+                interpolationPoints.setEntry(j, j - 1, -initialTrustRegionRadius);
+            } else {
+                interpolationPoints.setEntry(j, j - 1, initialTrustRegionRadius);
             }
-            interpolationPoints.setEntry(j, j - 1, stepA);
         }
 
+        // prepare points as defined in (2.2), right column
         final int rule2Max = Math.min(2 * dimension, numberOfInterpolationPoints);
         for (int j = dimension + 1; j <= rule2Max; j++) {
-            // prepare points as defined in (2.2), right column
-            double stepB = -initialTrustRegionRadius;
             if (lowerDifference.getEntry(j - dimension - 1) == ZERO) {
-                stepB = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(
+                final double stepB = JdkMath.min(TWO * initialTrustRegionRadius, upperDifference.getEntry(
                     j - dimension - 1));
-            }
-            if (upperDifference.getEntry(j - dimension - 1) == ZERO) {
-                stepB = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(
+                interpolationPoints.setEntry(j, j - dimension - 1, stepB);
+            } else if (upperDifference.getEntry(j - dimension - 1) == ZERO) {
+                final double stepB = JdkMath.max(-TWO * initialTrustRegionRadius, lowerDifference.getEntry(
                     j - dimension - 1));
+                interpolationPoints.setEntry(j, j - dimension - 1, stepB);
+            } else {
+                interpolationPoints.setEntry(j, j - dimension - 1, -initialTrustRegionRadius);
             }
-            interpolationPoints.setEntry(j, j - dimension - 1, stepB);
+
         }
 
+        // evaluate F for each point
         for (int j = 1; j <= rule2Max; j++) {
-            // evaluate F for each point
             for (int i = 0; i < dimension; i++) {
                 currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBound[i],
                         originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
