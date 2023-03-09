@@ -1441,10 +1441,9 @@ public class BOBYQAOptimizer
         int isav;
         double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
         int iterc;
-        double delsq = 0, ggsav = 0, tempa = 0, tempb = 0,
-        redmax = 0, dredsq = 0, redsav = 0, gredsq = 0, rednew = 0;
+        double delsq = 0, ggsav = 0, dredsq = 0, gredsq = 0;
         int itcsav = 0;
-        double rdprev = 0, rdnext = 0, stplen = 0, stepsq = 0;
+        double rdprev = 0, rdnext = 0, stepsq = 0;
         int itermax = 0;
 
         // Set some constants.
@@ -1542,7 +1541,7 @@ public class BOBYQAOptimizer
             } else {
                 blen = resid / (temp + ds);
             }
-            stplen = blen;
+            double stplen = blen;
             if (shs > ZERO) {
                 // Computing MIN
                 stplen = JdkMath.min(blen, gredsq / shs);
@@ -1678,8 +1677,8 @@ public class BOBYQAOptimizer
             iact = -1;
             for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
-                    tempa = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i) - lowerDifference.getEntry(i);
-                    tempb = upperDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i) - trialStepPoint.getEntry(i);
+                    final double tempa = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i) - lowerDifference.getEntry(i);
+                    final double tempb = upperDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i) - trialStepPoint.getEntry(i);
                     if (tempa <= ZERO) {
                         ++nact;
                         xbdi.setEntry(i, MINUS_ONE);
@@ -1731,15 +1730,15 @@ public class BOBYQAOptimizer
             // of ANGT in [0,ANGBD], where ANGT is the tangent of half the angle of
             // the alternative iteration.
 
-            redmax = ZERO;
+            double redmax = ZERO;
             isav = -1;
-            redsav = ZERO;
+            double redsav = ZERO;
             iu = (int) (angbd * 17. + 3.1);
             for (int i = 0; i < iu; i++) {
                 angt = angbd * i / iu;
                 sth = (angt + angt) / (ONE + angt * angt);
                 final double temp = shs + angt * (angt * dhd - dhs - dhs);
-                rednew = sth * (angt * dredg - sredg - HALF * sth * temp);
+                final double rednew = sth * (angt * dredg - sredg - HALF * sth * temp);
                 if (rednew > redmax) {
                     redmax = rednew;
                     isav = i;
