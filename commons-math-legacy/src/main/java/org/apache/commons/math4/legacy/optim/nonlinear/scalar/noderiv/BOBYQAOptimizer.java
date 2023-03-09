@@ -1433,15 +1433,15 @@ public class BOBYQAOptimizer
     ) {
 
         // Local variables
-        double dhd, dhs, cth, shs, sth, ssq, beta=0, sdec, blen;
+        double dhd, dhs, shs, sth, ssq, beta=0, sdec, blen;
         int iact = -1;
-        double angt = 0, qred;
+        double qred;
         int isav;
         double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
         int iterc;
         double delsq = 0, ggsav = 0, dredsq = 0, gredsq = 0;
         int itcsav = 0;
-        double rdprev = 0, rdnext = 0, stepsq = 0;
+        double stepsq = 0;
         int itermax = 0;
 
         // Set some constants.
@@ -1732,6 +1732,9 @@ public class BOBYQAOptimizer
             isav = -1;
             double redsav = ZERO;
             final int iu = (int) (angbd * 17. + 3.1);
+            double rdprev = 0;
+            double rdnext = 0;
+            double angt = 0;
             for (int i = 0; i < iu; i++) {
                 angt = angbd * i / iu;
                 sth = (angt + angt) / (ONE + angt * angt);
@@ -1757,7 +1760,7 @@ public class BOBYQAOptimizer
                 final double temp = (rdnext - rdprev) / (redmax + redmax - rdprev - rdnext);
                 angt = angbd * (isav + HALF * temp) / iu;
             }
-            cth = (ONE - angt * angt) / (ONE + angt * angt);
+            final double cth = (ONE - angt * angt) / (ONE + angt * angt);
             sth = (angt + angt) / (ONE + angt * angt);
             final double temp = shs + angt * (angt * dhd - dhs - dhs);
             sdec = sth * (angt * dredg - sredg - HALF * sth * temp);
