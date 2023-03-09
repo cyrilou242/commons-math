@@ -1439,9 +1439,9 @@ public class BOBYQAOptimizer
         int iact = -1;
         double angt = 0, qred;
         int isav;
-        double xsav = 0, xsum = 0, angbd = 0, dredg = 0, sredg = 0;
+        double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
         int iterc;
-        double resid = 0, delsq = 0, ggsav = 0, tempa = 0, tempb = 0,
+        double delsq = 0, ggsav = 0, tempa = 0, tempb = 0,
         redmax = 0, dredsq = 0, redsav = 0, gredsq = 0, rednew = 0;
         int itcsav = 0;
         double rdprev = 0, rdnext = 0, stplen = 0, stepsq = 0;
@@ -1523,7 +1523,7 @@ public class BOBYQAOptimizer
             state = 210; break;
         }
         case 50: {
-            resid = delsq;
+            double resid = delsq;
             ds = ZERO;
             shs = ZERO;
             for (int i = 0; i < dimension; i++) {
@@ -1554,7 +1554,7 @@ public class BOBYQAOptimizer
             iact = -1;
             for (int i = 0; i < dimension; i++) {
                 if (s.getEntry(i) != ZERO) {
-                    xsum = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i);
+                    final double xsum = trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i);
                     final double temp2;
                     if (s.getEntry(i) > ZERO) {
                         temp2 = (upperDifference.getEntry(i) - xsum) / s.getEntry(i);
