@@ -1882,9 +1882,6 @@ public class BOBYQAOptimizer
         final int npt = numberOfInterpolationPoints;
         final int nptm = npt - dimension - 1;
 
-        // XXX Should probably be split into two arrays.
-        final ArrayRealVector work = new ArrayRealVector(npt + dimension);
-
         double ztest = ZERO;
         for (int k = 0; k < npt; k++) {
             for (int j = 0; j < nptm; j++) {
@@ -1915,7 +1912,7 @@ public class BOBYQAOptimizer
 
         // Put the first numberOfInterpolationPoints components of the KNEW-th column of HLAG
         // into W, and calculate the parameters of the updating formula.
-
+        final ArrayRealVector work = new ArrayRealVector(npt + dimension);
         for (int i = 0; i < npt; i++) {
             work.setEntry(i, zMatrix.getEntry(kNew, 0) * zMatrix.getEntry(i, 0));
         }
