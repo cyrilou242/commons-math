@@ -16,6 +16,7 @@
  */
 package org.apache.commons.math4.legacy.optim.nonlinear.scalar.noderiv;
 
+import java.util.Arrays;
 import org.apache.commons.math4.legacy.analysis.MultivariateFunction;
 import org.apache.commons.math4.legacy.exception.DimensionMismatchException;
 import org.apache.commons.math4.legacy.exception.NumberIsTooLargeException;
@@ -88,6 +89,20 @@ public class BOBYQAOptimizerTest {
                 GoalType.MINIMIZE,
                 1e-13, 1e-6, 3000, expected, 2608, 2608);
      }
+
+    @Test
+    public void testRosenSolutionAtTheBoundary() {
+        // test that goes in the codepath mentionnned in MATH-1137  - warning - at the time of this commit the codepath looked incorrect
+        final int dim = 12;
+        double[] startPoint = OptimTestUtils.point(dim, 0.1);
+        double[][] boundaries = new double[2][dim];
+        Arrays.fill(boundaries[0], -2);
+        Arrays.fill(boundaries[1], 1);
+        PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
+        doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
+            GoalType.MINIMIZE,
+            1e-13, 1e-6, 3000, expected, 1765, 1765);
+    }
 
     @Test
     public void testMaximize() {
