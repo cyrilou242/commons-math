@@ -1433,8 +1433,6 @@ public class BOBYQAOptimizer
     ) {
 
         // Local variables
-        double ds;
-        int iu;
         double dhd, dhs, cth, shs, sth, ssq, beta=0, sdec, blen;
         int iact = -1;
         double angt = 0, qred;
@@ -1523,7 +1521,7 @@ public class BOBYQAOptimizer
         }
         case 50: {
             double resid = delsq;
-            ds = ZERO;
+            double ds = ZERO;
             shs = ZERO;
             for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
@@ -1733,7 +1731,7 @@ public class BOBYQAOptimizer
             double redmax = ZERO;
             isav = -1;
             double redsav = ZERO;
-            iu = (int) (angbd * 17. + 3.1);
+            final int iu = (int) (angbd * 17. + 3.1);
             for (int i = 0; i < iu; i++) {
                 angt = angbd * i / iu;
                 sth = (angt + angt) / (ONE + angt * angt);
