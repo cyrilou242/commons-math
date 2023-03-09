@@ -273,9 +273,6 @@ public class BOBYQAOptimizer
     /** {@inheritDoc} */
     @Override
     protected PointValuePair doOptimize() {
-        lowerBounds = new ArrayRealVector(getLowerBound(), false);
-        upperBounds = new ArrayRealVector(getUpperBound(), false);
-
         init();
 
         final double optimum = bobyqb();
@@ -2047,6 +2044,8 @@ public class BOBYQAOptimizer
      * Performs validity checks and initializes fields.
      */
     private void init() {
+        lowerBounds = new ArrayRealVector(getLowerBound(), false);
+        upperBounds = new ArrayRealVector(getUpperBound(), false);
         currentBest = new ArrayRealVector(getStartPoint());
         final int dimension = currentBest.getDimension();
 
