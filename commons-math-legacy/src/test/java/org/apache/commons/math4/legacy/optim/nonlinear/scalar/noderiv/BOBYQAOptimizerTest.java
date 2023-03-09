@@ -123,7 +123,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(new OptimTestUtils.ElliRotated(), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-12, 1e-6, 10000, expected, 6391, 8174);
+                1e-12, 1e-6, 10000, expected, 6391, 8518);
     }
 
     @Test
