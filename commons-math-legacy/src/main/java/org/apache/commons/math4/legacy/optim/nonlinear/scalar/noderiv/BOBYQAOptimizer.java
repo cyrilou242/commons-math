@@ -350,7 +350,7 @@ public class BOBYQAOptimizer
 
         int ntrits = 0;
         int itest = 0;
-        int knew = 0;
+        int kNew = 0;
         int nfsav = getEvaluations();
         double rho = initialTrustRegionRadius;
         double delta = rho;
@@ -593,7 +593,7 @@ public class BOBYQAOptimizer
             // being returned in CAUCHY. The choice between these alternatives is
             // going to be made when the denominator is calculated.
 
-            final double[] alphaCauchy = altmov(knew, adelt);
+            final double[] alphaCauchy = altmov(kNew, adelt);
             alpha = alphaCauchy[0];
             cauchy = alphaCauchy[1];
 
@@ -664,7 +664,7 @@ public class BOBYQAOptimizer
 
             if (ntrits == 0) {
                 // Computing 2nd power
-                final double d1 = lagrangeValuesAtNewPoint.getEntry(knew);
+                final double d1 = lagrangeValuesAtNewPoint.getEntry(kNew);
                 denom = d1 * d1 + alpha * beta;
                 if (denom < cauchy && cauchy > ZERO) {
                     for (int i = 0; i < dimension; i++) {
@@ -683,7 +683,7 @@ public class BOBYQAOptimizer
                 final double delsq = delta * delta;
                 scaden = ZERO;
                 biglsq = ZERO;
-                knew = 0;
+                kNew = 0;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     if (k == trustRegionCenterInterpolationPointIndex) {
                         continue;
@@ -709,7 +709,7 @@ public class BOBYQAOptimizer
                     final double temp = JdkMath.max(ONE, d4 * d4);
                     if (temp * den > scaden) {
                         scaden = temp * den;
-                        knew = k;
+                        kNew = k;
                         denom = den;
                     }
                     // Computing MAX
@@ -794,12 +794,12 @@ public class BOBYQAOptimizer
                 // Recalculate KNEW and DENOM if the new F is less than FOPT.
 
                 if (f < fopt) {
-                    final int ksav = knew;
+                    final int ksav = kNew;
                     final double densav = denom;
                     final double delsq = delta * delta;
                     scaden = ZERO;
                     biglsq = ZERO;
-                    knew = 0;
+                    kNew = 0;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         double hdiag = ZERO;
                         for (int m = 0; m < nptm; m++) {
@@ -822,7 +822,7 @@ public class BOBYQAOptimizer
                         final double temp = JdkMath.max(ONE, d3 * d3);
                         if (temp * den > scaden) {
                             scaden = temp * den;
-                            knew = k;
+                            kNew = k;
                             denom = den;
                         }
                         // Computing MAX
@@ -832,7 +832,7 @@ public class BOBYQAOptimizer
                         biglsq = JdkMath.max(biglsq, d5);
                     }
                     if (scaden <= HALF * biglsq) {
-                        knew = ksav;
+                        kNew = ksav;
                         denom = densav;
                     }
                 }
@@ -841,20 +841,20 @@ public class BOBYQAOptimizer
             // Update BMAT and ZMAT, so that the KNEW-th interpolation point can be
             // moved. Also update the second derivative terms of the model.
 
-            update(beta, denom, knew);
+            update(beta, denom, kNew);
 
             ih = 0;
-            final double pqold = modelSecondDerivativesParameters.getEntry(knew);
-            modelSecondDerivativesParameters.setEntry(knew, ZERO);
+            final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
+            modelSecondDerivativesParameters.setEntry(kNew, ZERO);
             for (int i = 0; i < dimension; i++) {
-                final double temp = pqold * interpolationPoints.getEntry(knew, i);
+                final double temp = pqold * interpolationPoints.getEntry(kNew, i);
                 for (int j = 0; j <= i; j++) {
-                    modelSecondDerivativesValues.setEntry(ih, modelSecondDerivativesValues.getEntry(ih) + temp * interpolationPoints.getEntry(knew, j));
+                    modelSecondDerivativesValues.setEntry(ih, modelSecondDerivativesValues.getEntry(ih) + temp * interpolationPoints.getEntry(kNew, j));
                     ih++;
                 }
             }
             for (int m = 0; m < nptm; m++) {
-                final double temp = diff * zMatrix.getEntry(knew, m);
+                final double temp = diff * zMatrix.getEntry(kNew, m);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     modelSecondDerivativesParameters.setEntry(k, modelSecondDerivativesParameters.getEntry(k) + temp * zMatrix.getEntry(k, m));
                 }
@@ -863,15 +863,15 @@ public class BOBYQAOptimizer
             // Include the new interpolation point, and make the changes to gradientAtTrustRegionCenter at
             // the old XOPT that are caused by the updating of the quadratic model.
 
-            fAtInterpolationPoints.setEntry(knew,  f);
+            fAtInterpolationPoints.setEntry(kNew,  f);
             for (int i = 0; i < dimension; i++) {
-                interpolationPoints.setEntry(knew, i, newPoint.getEntry(i));
-                work1.setEntry(i, bMatrix.getEntry(knew, i));
+                interpolationPoints.setEntry(kNew, i, newPoint.getEntry(i));
+                work1.setEntry(i, bMatrix.getEntry(kNew, i));
             }
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
                 for (int m = 0; m < nptm; m++) {
-                    suma += zMatrix.getEntry(knew, m) * zMatrix.getEntry(k, m);
+                    suma += zMatrix.getEntry(kNew, m) * zMatrix.getEntry(k, m);
                 }
                 double sumb = ZERO;
                 for (int j = 0; j < dimension; j++) {
@@ -889,7 +889,7 @@ public class BOBYQAOptimizer
             // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
 
             if (f < fopt) {
-                trustRegionCenterInterpolationPointIndex = knew;
+                trustRegionCenterInterpolationPointIndex = kNew;
                 xoptsq = ZERO;
                 ih = 0;
                 for (int j = 0; j < dimension; j++) {
@@ -1022,7 +1022,7 @@ public class BOBYQAOptimizer
             distsq = JdkMath.max(d1 * d1, d2 * d2);
         }
         case 650: {
-            knew = -1;
+            kNew = -1;
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double sum = ZERO;
                 for (int j = 0; j < dimension; j++) {
@@ -1031,7 +1031,7 @@ public class BOBYQAOptimizer
                     sum += d1 * d1;
                 }
                 if (sum > distsq) {
-                    knew = k;
+                    kNew = k;
                     distsq = sum;
                 }
             }
@@ -1042,7 +1042,7 @@ public class BOBYQAOptimizer
             // another trust region iteration, unless the calculations with the
             // current RHO are complete.
 
-            if (knew >= 0) {
+            if (kNew >= 0) {
                 final double dist = JdkMath.sqrt(distsq);
                 if (ntrits == -1) {
                     // Computing MIN
@@ -1144,25 +1144,25 @@ public class BOBYQAOptimizer
      *
      *     Set the first numberOfInterpolationPoints components of W to the leading elements of the
      *     KNEW-th column of the H matrix.
-     * @param knew
+     * @param kNew
      * @param adelt
      * @return { alpha, cauchy }
      */
     private double[] altmov(
-            final int knew,
+            final int kNew,
             final double adelt
     ) {
 
         final ArrayRealVector hcol = new ArrayRealVector(numberOfInterpolationPoints);
         for (int j = 0, max = numberOfInterpolationPoints - dimension - 1; j < max; j++) {
-            final double tmp = zMatrix.getEntry(knew, j);
+            final double tmp = zMatrix.getEntry(kNew, j);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 hcol.setEntry(k, hcol.getEntry(k) + tmp * zMatrix.getEntry(k, j));
             }
         }
 
         // Calculate the gradient of the KNEW-th Lagrange function at XOPT.
-        final RealVector glag = bMatrix.getRowVector(knew);
+        final RealVector glag = bMatrix.getRowVector(kNew);
         for (int k = 0; k < numberOfInterpolationPoints; k++) {
             double tmp = ZERO;
             for (int j = 0; j < dimension; j++) {
@@ -1185,7 +1185,7 @@ public class BOBYQAOptimizer
         int ksav = 0;
         int ibdsav = 0;
         double stpsav = 0;
-        final double alpha = hcol.getEntry(knew);
+        final double alpha = hcol.getEntry(kNew);
         final double halfAlpha = HALF * alpha;
         for (int k = 0; k < numberOfInterpolationPoints; k++) {
             if (k == trustRegionCenterInterpolationPointIndex) {
@@ -1239,7 +1239,7 @@ public class BOBYQAOptimizer
             step = slbd;
             int isbd = ilbd;
             double vlag = Double.NaN;
-            if (k == knew) {
+            if (k == kNew) {
                 final double diff = dderiv - ONE;
                 vlag = slbd * (dderiv - slbd * diff);
                 final double d1 = subd * (dderiv - subd * diff);
@@ -1956,12 +1956,12 @@ public class BOBYQAOptimizer
      *     at most ZTEST. The first NDIM elements of W are used for working space.
      * @param beta
      * @param denom
-     * @param knew
+     * @param kNew
      */
     private void update(
             final double beta,
             final double denom,
-            final int knew
+            final int kNew
     ) {
 
         final int npt = numberOfInterpolationPoints;
@@ -1982,39 +1982,39 @@ public class BOBYQAOptimizer
         // Apply the rotations that put zeros in the KNEW-th row of ZMAT.
 
         for (int j = 1; j < nptm; j++) {
-            final double d1 = zMatrix.getEntry(knew, j);
+            final double d1 = zMatrix.getEntry(kNew, j);
             if (JdkMath.abs(d1) > ztest) {
                 // Computing 2nd power
-                final double d2 = zMatrix.getEntry(knew, 0);
+                final double d2 = zMatrix.getEntry(kNew, 0);
                 // Computing 2nd power
-                final double d3 = zMatrix.getEntry(knew, j);
+                final double d3 = zMatrix.getEntry(kNew, j);
                 final double d4 = JdkMath.sqrt(d2 * d2 + d3 * d3);
-                final double d5 = zMatrix.getEntry(knew, 0) / d4;
-                final double d6 = zMatrix.getEntry(knew, j) / d4;
+                final double d5 = zMatrix.getEntry(kNew, 0) / d4;
+                final double d6 = zMatrix.getEntry(kNew, j) / d4;
                 for (int i = 0; i < npt; i++) {
                     final double d7 = d5 * zMatrix.getEntry(i, 0) + d6 * zMatrix.getEntry(i, j);
                     zMatrix.setEntry(i, j, d5 * zMatrix.getEntry(i, j) - d6 * zMatrix.getEntry(i, 0));
                     zMatrix.setEntry(i, 0, d7);
                 }
             }
-            zMatrix.setEntry(knew, j, ZERO);
+            zMatrix.setEntry(kNew, j, ZERO);
         }
 
         // Put the first numberOfInterpolationPoints components of the KNEW-th column of HLAG
         // into W, and calculate the parameters of the updating formula.
 
         for (int i = 0; i < npt; i++) {
-            work.setEntry(i, zMatrix.getEntry(knew, 0) * zMatrix.getEntry(i, 0));
+            work.setEntry(i, zMatrix.getEntry(kNew, 0) * zMatrix.getEntry(i, 0));
         }
-        final double alpha = work.getEntry(knew);
-        final double tau = lagrangeValuesAtNewPoint.getEntry(knew);
-        lagrangeValuesAtNewPoint.setEntry(knew, lagrangeValuesAtNewPoint.getEntry(knew) - ONE);
+        final double alpha = work.getEntry(kNew);
+        final double tau = lagrangeValuesAtNewPoint.getEntry(kNew);
+        lagrangeValuesAtNewPoint.setEntry(kNew, lagrangeValuesAtNewPoint.getEntry(kNew) - ONE);
 
         // Complete the updating of ZMAT.
 
         final double sqrtDenom = JdkMath.sqrt(denom);
         final double d1 = tau / sqrtDenom;
-        final double d2 = zMatrix.getEntry(knew, 0) / sqrtDenom;
+        final double d2 = zMatrix.getEntry(kNew, 0) / sqrtDenom;
         for (int i = 0; i < npt; i++) {
             zMatrix.setEntry(i, 0,
                           d1 * zMatrix.getEntry(i, 0) - d2 * lagrangeValuesAtNewPoint.getEntry(i));
@@ -2024,7 +2024,7 @@ public class BOBYQAOptimizer
 
         for (int j = 0; j < dimension; j++) {
             final int jp = npt + j;
-            work.setEntry(jp, bMatrix.getEntry(knew, j));
+            work.setEntry(jp, bMatrix.getEntry(kNew, j));
             final double d3 = (alpha * lagrangeValuesAtNewPoint.getEntry(jp) - tau * work.getEntry(jp)) / denom;
             final double d4 = (-beta * work.getEntry(jp) - tau * lagrangeValuesAtNewPoint.getEntry(jp)) / denom;
             for (int i = 0; i <= jp; i++) {
