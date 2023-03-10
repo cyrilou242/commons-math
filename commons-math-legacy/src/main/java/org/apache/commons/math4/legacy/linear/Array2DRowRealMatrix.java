@@ -260,6 +260,21 @@ public class Array2DRowRealMatrix extends AbstractRealMatrix implements Serializ
         return data;
     }
 
+    /**
+     * Get a vector that holds a reference to a row of the matrix.
+     *
+     * @return 2-dimensional array of entries.
+     */
+    public RealVector getRowVectorRef(final int row) {
+        try {
+            return new ArrayRealVector(data[row], false);
+        } catch (IndexOutOfBoundsException e) {
+            MatrixUtils.checkRowIndex(this, row);
+            throw e;
+        }
+
+    }
+
     /** {@inheritDoc} */
     @Override
     public void setSubMatrix(final double[][] subMatrix, final int row,

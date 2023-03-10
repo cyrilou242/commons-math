@@ -17,6 +17,7 @@
 // CHECKSTYLE: stop all
 package org.apache.commons.math4.legacy.optim.nonlinear.scalar.noderiv;
 
+import java.util.Arrays;
 import org.apache.commons.math4.legacy.exception.MathIllegalStateException;
 import org.apache.commons.math4.legacy.exception.NumberIsTooSmallException;
 import org.apache.commons.math4.legacy.exception.OutOfRangeException;
@@ -1091,31 +1092,13 @@ public class BOBYQAOptimizer
      * @param adelt
      * @return { alpha, cauchy }
      */
-    private double[] altmov(
-            final int kNew,
-            final double adelt
-    ) {
-
-        final ArrayRealVector hcol = new ArrayRealVector(numberOfInterpolationPoints);
-        for (int j = 0, max = numberOfInterpolationPoints - dimension - 1; j < max; j++) {
-            final double tmp = zMatrix.getEntry(kNew, j);
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                hcol.setEntry(k, hcol.getEntry(k) + tmp * zMatrix.getEntry(k, j));
-            }
-        }
+    private double[] altmov(final int kNew, final double adelt) {
+        final RealVector hcol = zMatrix.operate(zMatrix.getRowVectorRef(kNew));
 
         // Calculate the gradient of the KNEW-th Lagrange function at XOPT.
-        final RealVector glag = bMatrix.getRowVector(kNew);
-        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-            double tmp = ZERO;
-            for (int j = 0; j < dimension; j++) {
-                tmp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
-            }
-            tmp *= hcol.getEntry(k);
-            for (int i = 0; i < dimension; i++) {
-                glag.setEntry(i, glag.getEntry(i) + tmp * interpolationPoints.getEntry(k, i));
-            }
-        }
+        final RealVector temp1 = interpolationPoints.operate(trustRegionCenterOffset).ebeMultiply(hcol);
+        final RealVector temp2 = interpolationPoints.preMultiply(temp1);
+        final RealVector glag = bMatrix.getRowVectorRef(kNew).add(temp2);
 
         // Search for a large denominator along the straight lines through XOPT
         // and another interpolation point. SLBD and SUBD will be lower and upper
@@ -1367,6 +1350,11 @@ public class BOBYQAOptimizer
 
         return new double[] { alpha, cauchy };
     } // altmov
+
+    // used to get a matrix row as a vector without copying data
+    private ArrayRealVector rowRef(final Array2DRowRealMatrix matrix, final int k) {
+        return new ArrayRealVector(matrix.getDataRef()[k], false);
+    }
 
     // ----------------------------------------------------------------------------------------
 
