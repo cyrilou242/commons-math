@@ -405,12 +405,7 @@ public class BOBYQAOptimizer
             // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
         }
         case 60: {
-            final ArrayRealVector gnew = new ArrayRealVector(dimension);
-            final ArrayRealVector s = new ArrayRealVector(dimension);
-            final ArrayRealVector hs = new ArrayRealVector(dimension);
-
-            final double[] dsqCrvmin = trsbox(delta, gnew, s,
-                                              hs);
+            final double[] dsqCrvmin = trsbox(delta);
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
 
@@ -1414,20 +1409,13 @@ public class BOBYQAOptimizer
      *       value CRVMIN=-1.0D0 is set, however, if all of these searches are
      *       constrained.
      * @param delta
-     * @param gnew
-     * @param s
-     * @param hs
      * @return { dsq, crvmin }
      */
-    private double[] trsbox(
-            final double delta,
-            final ArrayRealVector gnew,
-            final ArrayRealVector s,
-            final ArrayRealVector hs
-    ) {
-
+    private double[] trsbox(final double delta) {
+        final ArrayRealVector gnew = new ArrayRealVector(dimension);
+        final ArrayRealVector s = new ArrayRealVector(dimension);
         final ArrayRealVector hred = new ArrayRealVector(dimension);
-        // Local variables
+        final ArrayRealVector hs = new ArrayRealVector(dimension);
         double beta=0;
         int iact = -1;
         double qred;
@@ -1437,10 +1425,6 @@ public class BOBYQAOptimizer
         int itcsav = 0;
         double stepsq = 0;
         int itermax = 0;
-
-        // Set some constants.
-
-        // Function Body
 
         // The sign of gradientAtTrustRegionCenter(I) gives the sign of the change to the I-th variable
         // that will reduce Q from its value at XOPT. Thus xbdi.get((I) shows whether
