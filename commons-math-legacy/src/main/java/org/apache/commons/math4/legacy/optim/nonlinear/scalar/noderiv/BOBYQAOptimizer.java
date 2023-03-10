@@ -1437,7 +1437,7 @@ public class BOBYQAOptimizer
         int iact = -1;
         double qred;
         double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
-        int iterc;
+        int iterc = 0;
         double dredsq = 0, gredsq = 0;
         int itcsav = 0;
         double stepsq = 0;
@@ -1454,7 +1454,6 @@ public class BOBYQAOptimizer
         // set for the first iteration. DELSQ is the upper bound on the sum of
         // squares of the free variables. QRED is the reduction in Q so far.
 
-        iterc = 0;
         int nact = 0;
         for (int i = 0; i < dimension; i++) {
             xbdi.setEntry(i, ZERO);
