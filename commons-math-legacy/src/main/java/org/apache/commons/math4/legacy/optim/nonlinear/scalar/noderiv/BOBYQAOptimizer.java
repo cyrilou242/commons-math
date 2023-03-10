@@ -1510,7 +1510,8 @@ public class BOBYQAOptimizer
                 }
             }
             if (resid <= ZERO) {
-                state = 90; break;
+                crvmin = ZERO;
+                state = 100; break;
             }
             double temp = JdkMath.sqrt(stepsq * resid + ds * ds);
             double blen;
@@ -1601,14 +1602,12 @@ public class BOBYQAOptimizer
                 beta = gredsq / ggsav;
                 state = 30; break;
             }
-        }
-        case 90: {
             crvmin = ZERO;
-
-            // Prepare for the alternative iteration by calculating some scalars
-            // and by multiplying the reduced D by the second derivative matrix of
-            // Q, where S holds the reduced D in the call of GGMULT.
+            state = 100; break;
         }
+        // Prepare for the alternative iteration by calculating some scalars
+        // and by multiplying the reduced D by the second derivative matrix of
+        // Q, where S holds the reduced D in the call of GGMULT.
         case 100: {
             if (nact >= dimension - 1) {
                 state = 190; break;
