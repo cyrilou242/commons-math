@@ -408,10 +408,9 @@ public class BOBYQAOptimizer
             final ArrayRealVector gnew = new ArrayRealVector(dimension);
             final ArrayRealVector s = new ArrayRealVector(dimension);
             final ArrayRealVector hs = new ArrayRealVector(dimension);
-            final ArrayRealVector hred = new ArrayRealVector(dimension);
 
             final double[] dsqCrvmin = trsbox(delta, gnew, s,
-                                              hs, hred);
+                                              hs);
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
 
@@ -1418,17 +1417,16 @@ public class BOBYQAOptimizer
      * @param gnew
      * @param s
      * @param hs
-     * @param hred
      * @return { dsq, crvmin }
      */
     private double[] trsbox(
             final double delta,
             final ArrayRealVector gnew,
             final ArrayRealVector s,
-            final ArrayRealVector hs,
-            final ArrayRealVector hred
+            final ArrayRealVector hs
     ) {
 
+        final ArrayRealVector hred = new ArrayRealVector(dimension);
         // Local variables
         double beta=0;
         int iact = -1;
