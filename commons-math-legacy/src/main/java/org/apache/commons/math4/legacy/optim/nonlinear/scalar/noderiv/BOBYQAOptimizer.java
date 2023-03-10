@@ -1433,13 +1433,12 @@ public class BOBYQAOptimizer
     ) {
 
         // Local variables
-        double dhd, dhs, shs, sth, ssq, beta=0, sdec, blen;
+        double beta=0;
         int iact = -1;
         double qred;
-        int isav;
         double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
         int iterc;
-        double delsq = 0, ggsav = 0, dredsq = 0, gredsq = 0;
+        double dredsq = 0, gredsq = 0;
         int itcsav = 0;
         double stepsq = 0;
         int itermax = 0;
@@ -1473,7 +1472,7 @@ public class BOBYQAOptimizer
             trialStepPoint.setEntry(i, ZERO);
             gnew.setEntry(i, gradientAtTrustRegionCenter.getEntry(i));
         }
-        delsq = delta * delta;
+        double delsq = delta * delta;
         qred = ZERO;
         double crvmin = MINUS_ONE;
 
@@ -1522,7 +1521,7 @@ public class BOBYQAOptimizer
         case 50: {
             double resid = delsq;
             double ds = ZERO;
-            shs = ZERO;
+            double shs = ZERO;
             for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     resid -= power2(trialStepPoint.getEntry(i));
@@ -1534,6 +1533,7 @@ public class BOBYQAOptimizer
                 state = 90; break;
             }
             double temp = JdkMath.sqrt(stepsq * resid + ds * ds);
+            double blen;
             if (ds < ZERO) {
                 blen = (temp - ds) / stepsq;
             } else {
@@ -1567,7 +1567,8 @@ public class BOBYQAOptimizer
 
             // Update CRVMIN, GNEW and D. Set SDEC to the decrease that occurs in Q.
 
-            sdec = ZERO;
+            double sdec = ZERO;
+            double ggsav = ZERO;
             if (stplen > ZERO) {
                 ++iterc;
                 temp = shs / stepsq;
@@ -1686,7 +1687,7 @@ public class BOBYQAOptimizer
                         xbdi.setEntry(i, ONE);
                         state = 100; break goto_trsbox;
                     }
-                    ssq = power2(trialStepPoint.getEntry(i)) + power2(s.getEntry(i));
+                    final double ssq = power2(trialStepPoint.getEntry(i)) + power2(s.getEntry(i));
                     double temp2 = ssq - power2(trustRegionCenterOffset.getEntry(i) - lowerDifference.getEntry(i));
                     if (temp2 > ZERO) {
                         temp2 = JdkMath.sqrt(temp2) - s.getEntry(i);
@@ -1713,9 +1714,9 @@ public class BOBYQAOptimizer
             state = 210; break;
         }
         case 150: {
-            shs = ZERO;
-            dhs = ZERO;
-            dhd = ZERO;
+            double shs = ZERO;
+            double dhs = ZERO;
+            double dhd = ZERO;
             for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == ZERO) {
                     shs += s.getEntry(i) * hs.getEntry(i);
@@ -1729,7 +1730,7 @@ public class BOBYQAOptimizer
             // the alternative iteration.
 
             double redmax = ZERO;
-            isav = -1;
+            int isav = -1;
             double redsav = ZERO;
             final int iu = (int) (angbd * 17. + 3.1);
             double rdprev = 0;
@@ -1737,7 +1738,7 @@ public class BOBYQAOptimizer
             double angt = 0;
             for (int i = 0; i < iu; i++) {
                 angt = angbd * i / iu;
-                sth = (angt + angt) / (ONE + angt * angt);
+                final double sth = (angt + angt) / (ONE + angt * angt);
                 final double temp = shs + angt * (angt * dhd - dhs - dhs);
                 final double rednew = sth * (angt * dredg - sredg - HALF * sth * temp);
                 if (rednew > redmax) {
@@ -1761,9 +1762,9 @@ public class BOBYQAOptimizer
                 angt = angbd * (isav + HALF * temp) / iu;
             }
             final double cth = (ONE - angt * angt) / (ONE + angt * angt);
-            sth = (angt + angt) / (ONE + angt * angt);
+            final double sth = (angt + angt) / (ONE + angt * angt);
             final double temp = shs + angt * (angt * dhd - dhs - dhs);
-            sdec = sth * (angt * dredg - sredg - HALF * sth * temp);
+            final double sdec = sth * (angt * dredg - sredg - HALF * sth * temp);
             if (sdec <= ZERO) {
                 state = 190; break;
             }
