@@ -1416,7 +1416,6 @@ public class BOBYQAOptimizer
         final ArrayRealVector s = new ArrayRealVector(dimension);
         final ArrayRealVector hred = new ArrayRealVector(dimension);
         final ArrayRealVector hs = new ArrayRealVector(dimension);
-        double beta=0;
         int iact = -1;
         double qred;
         double xsav = 0, angbd = 0, dredg = 0, sredg = 0;
@@ -1462,12 +1461,10 @@ public class BOBYQAOptimizer
         // course the components of the fixed variables are zero. ITERMAX is an
         // upper bound on the indices of the conjugate gradient iterations.
 
-        int state = 20;
+        double beta = ZERO;
+        int state = 30;
         for(;;) {
         goto_trsbox: switch (state) {
-        case 20: {
-            beta = ZERO;
-        }
         case 30: {
             stepsq = ZERO;
             for (int i = 0; i < dimension; i++) {
@@ -1586,7 +1583,8 @@ public class BOBYQAOptimizer
                 if (delsq <= ZERO) {
                     state = 190; break;
                 }
-                state = 20; break;
+                beta = ZERO;
+                state = 30; break;
             }
 
             // If STPLEN is less than BLEN, then either apply another conjugate
