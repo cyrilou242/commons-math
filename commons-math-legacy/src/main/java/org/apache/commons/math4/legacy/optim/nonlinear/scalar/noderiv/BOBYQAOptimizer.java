@@ -406,12 +406,11 @@ public class BOBYQAOptimizer
         }
         case 60: {
             final ArrayRealVector gnew = new ArrayRealVector(dimension);
-            final ArrayRealVector xbdi = new ArrayRealVector(dimension);
             final ArrayRealVector s = new ArrayRealVector(dimension);
             final ArrayRealVector hs = new ArrayRealVector(dimension);
             final ArrayRealVector hred = new ArrayRealVector(dimension);
 
-            final double[] dsqCrvmin = trsbox(delta, gnew, xbdi, s,
+            final double[] dsqCrvmin = trsbox(delta, gnew, s,
                                               hs, hred);
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
@@ -1417,7 +1416,6 @@ public class BOBYQAOptimizer
      *       constrained.
      * @param delta
      * @param gnew
-     * @param xbdi
      * @param s
      * @param hs
      * @param hred
@@ -1426,7 +1424,6 @@ public class BOBYQAOptimizer
     private double[] trsbox(
             final double delta,
             final ArrayRealVector gnew,
-            final ArrayRealVector xbdi,
             final ArrayRealVector s,
             final ArrayRealVector hs,
             final ArrayRealVector hred
@@ -1454,9 +1451,9 @@ public class BOBYQAOptimizer
         // set for the first iteration. DELSQ is the upper bound on the sum of
         // squares of the free variables. QRED is the reduction in Q so far.
 
+        final ArrayRealVector xbdi = new ArrayRealVector(dimension);
         int nact = 0;
         for (int i = 0; i < dimension; i++) {
-            xbdi.setEntry(i, ZERO);
             if (trustRegionCenterOffset.getEntry(i) <= lowerDifference.getEntry(i)) {
                 if (gradientAtTrustRegionCenter.getEntry(i) >= ZERO) {
                     xbdi.setEntry(i, MINUS_ONE);
@@ -1468,6 +1465,8 @@ public class BOBYQAOptimizer
             if (xbdi.getEntry(i) != ZERO) {
                 ++nact;
             }
+        }
+        for (int i = 0; i < dimension; i++) {
             trialStepPoint.setEntry(i, ZERO);
             gnew.setEntry(i, gradientAtTrustRegionCenter.getEntry(i));
         }
