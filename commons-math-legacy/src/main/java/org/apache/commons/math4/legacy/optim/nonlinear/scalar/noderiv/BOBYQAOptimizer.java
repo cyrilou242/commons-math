@@ -431,15 +431,10 @@ public class BOBYQAOptimizer
             // that do not depend on ZMAT. VLAG is used temporarily for working space.
             if (dsq <= xoptsq * ONE_OVER_A_THOUSAND) {
                 final double fracsq = xoptsq * ONE_OVER_FOUR;
-                // final RealVector sumVector
-                //     = new ArrayRealVector(npt, -HALF * xoptsq).add(interpolationPoints.operate(trustRegionCenter));
+                final RealVector workVector = interpolationPoints.operate(trustRegionCenterOffset).mapSubtractToSelf(HALF * xoptsq);
+
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    double sum = -HALF * xoptsq;
-                    for (int i = 0; i < dimension; i++) {
-                        sum += interpolationPoints.getEntry(k, i) * trustRegionCenterOffset.getEntry(i);
-                    }
-                    // sum = sumVector.getEntry(k); // XXX "testAckley" and "testDiffPow" fail.
-                    work2.setEntry(k, sum);
+                    final double sum = workVector.getEntry(k);
                     final double temp = fracsq - HALF * sum;
                     for (int i = 0; i < dimension; i++) {
                         work1.setEntry(i, bMatrix.getEntry(k, i));
@@ -463,7 +458,7 @@ public class BOBYQAOptimizer
                     }
                     double sumw = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        lagrangeValuesAtNewPoint.setEntry(k, work2.getEntry(k) * zMatrix.getEntry(k, m));
+                        lagrangeValuesAtNewPoint.setEntry(k, workVector.getEntry(k) * zMatrix.getEntry(k, m));
                         sumw += lagrangeValuesAtNewPoint.getEntry(k);
                     }
                     for (int j = 0; j < dimension; j++) {
