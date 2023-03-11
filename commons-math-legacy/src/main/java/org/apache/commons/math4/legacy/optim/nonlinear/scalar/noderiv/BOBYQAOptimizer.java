@@ -547,21 +547,19 @@ public class BOBYQAOptimizer
             // Calculate VLAG and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
-            final ArrayRealVector work2 = new ArrayRealVector(numberOfInterpolationPoints);
             final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
             final ArrayRealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
+            final RealVector work2 = interpolationPoints.operate(trialStepPoint);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                double suma = ZERO;
                 double sumb = ZERO;
                 double sum = ZERO;
                 for (int j = 0; j < dimension; j++) {
-                    suma += interpolationPoints.getEntry(k, j) * trialStepPoint.getEntry(j);
                     sumb += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                     sum += bMatrix.getEntry(k, j) * trialStepPoint.getEntry(j);
                 }
+                double suma =  work2.getEntry(k);
                 work3.setEntry(k, suma * (HALF * suma + sumb));
                 workHwComponents.setEntry(k, sum);
-                work2.setEntry(k, suma);
             }
             double betaPart = ZERO;
             for (int m = 0; m < nptm; m++) {
