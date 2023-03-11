@@ -340,7 +340,6 @@ public class BOBYQAOptimizer
             xoptsq += power2(trustRegionCenterOffset.getEntry(i));
         }
         double fsave = fAtInterpolationPoints.getEntry(0);
-        final int kbase = 0;
 
         // Complete the settings that are required for the iterative procedure.
 
@@ -363,14 +362,13 @@ public class BOBYQAOptimizer
         double biglsq = ZERO;
         double distsq = ZERO;
 
-        // Update gradientAtTrustRegionCenter if necessary before the first iteration and after each
-        // call of RESCUE that makes a call of CALFUN.
-
         int state = 20;
         goto_for: for(;;) {
         goto_switch: switch (state) {
         case 20: {
-            if (trustRegionCenterInterpolationPointIndex != kbase) {
+            // Update gradientAtTrustRegionCenter if necessary before the first iteration and after each
+            // call of RESCUE that makes a call of CALFUN.
+            if (trustRegionCenterInterpolationPointIndex != 0) {
                 int ih = 0;
                 for (int j = 0; j < dimension; j++) {
                     for (int i = 0; i <= j; i++) {
@@ -394,15 +392,14 @@ public class BOBYQAOptimizer
                     }
                 }
             }
-
+        }
+        case 60: {
             // Generate the next point in the trust region that provides a small value
             // of the quadratic model subject to the constraints on the variables.
             // The int NTRITS is set to the number "trust region" iterations that
             // have occurred since the last "alternative" iteration. If the length
             // of XNEW-XOPT is less than HALF*RHO, however, then there is a branch to
             // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
-        }
-        case 60: {
             final double[] dsqCrvmin = trsbox(delta);
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
