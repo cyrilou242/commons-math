@@ -370,7 +370,7 @@ public class BOBYQAOptimizer
         case 60: {
             // Generate the next point in the trust region that provides a small value
             // of the quadratic model subject to the constraints on the variables.
-            // The int NTRITS is set to the number "trust region" iterations that
+            // The integer NTRITS is set to the number "trust region" iterations that
             // have occurred since the last "alternative" iteration. If the length
             // of XNEW-XOPT is less than HALF*RHO, however, then there is a branch to
             // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
@@ -378,10 +378,7 @@ public class BOBYQAOptimizer
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
 
-            // Computing MIN
-            double deltaOne = delta;
-            double deltaTwo = JdkMath.sqrt(dsq);
-            dnorm = JdkMath.min(deltaOne, deltaTwo);
+            dnorm = JdkMath.min(delta, JdkMath.sqrt(dsq));
             if (dnorm < HALF * rho) {
                 ntrits = -1;
                 distsq = power2(TEN * rho);
@@ -396,8 +393,7 @@ public class BOBYQAOptimizer
                 // of likely improvements to the model within distance HALF*RHO of XOPT.
 
                 // Computing MAX
-                deltaOne = JdkMath.max(diffa, diffb);
-                final double errbig = JdkMath.max(deltaOne, diffc);
+                final double errbig = JdkMath.max(JdkMath.max(diffa, diffb), diffc);
                 final double frhosq = rho * ONE_OVER_EIGHT * rho;
                 if (crvmin > ZERO &&
                     errbig > frhosq * crvmin) {
