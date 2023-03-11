@@ -653,11 +653,8 @@ public class BOBYQAOptimizer
 
             // Put the variables for the next calculation of the objective function
             //   in XNEW, with any adjustments for the bounds.
-
             // Calculate the value of the objective function at XBASE+XNEW, unless
             //   the limit on the number of calculations of F has been reached.
-        }
-        case 360: {
             for (int i = 0; i < dimension; i++) {
                 final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
@@ -848,12 +845,12 @@ public class BOBYQAOptimizer
                         work3.setEntry(k, work3.getEntry(k) + sum * zMatrix.getEntry(k, j));
                     }
                 }
+                final ArrayRealVector oldWork3 = new ArrayRealVector(work3);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double sum = ZERO;
                     for (int j = 0; j < dimension; j++) {
                         sum += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                     }
-                    work2.setEntry(k, work3.getEntry(k));
                     work3.setEntry(k, sum * work3.getEntry(k));
                 }
                 double gqsq = ZERO;
@@ -893,7 +890,7 @@ public class BOBYQAOptimizer
                                 numberOfInterpolationPoints + i));
                         }
                         if (i < numberOfInterpolationPoints) {
-                            modelSecondDerivativesParameters.setEntry(i, work2.getEntry(i));
+                            modelSecondDerivativesParameters.setEntry(i, oldWork3.getEntry(i));
                         }
                         if (i < nh) {
                             modelSecondDerivativesValues.setEntry(i, ZERO);
