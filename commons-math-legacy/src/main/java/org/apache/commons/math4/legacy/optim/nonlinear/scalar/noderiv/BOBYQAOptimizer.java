@@ -362,37 +362,11 @@ public class BOBYQAOptimizer
         double biglsq = ZERO;
         double distsq = ZERO;
 
-        int state = 20;
+        initializeGradient();
+
+        int state = 60;
         goto_for: for(;;) {
         goto_switch: switch (state) {
-        case 20: {
-            // Update gradientAtTrustRegionCenter if necessary before the first iteration and after each
-            // call of RESCUE that makes a call of CALFUN.
-            if (trustRegionCenterInterpolationPointIndex != 0) {
-                int ih = 0;
-                for (int j = 0; j < dimension; j++) {
-                    for (int i = 0; i <= j; i++) {
-                        if (i < j) {
-                            gradientAtTrustRegionCenter.setEntry(j, gradientAtTrustRegionCenter.getEntry(j) + modelSecondDerivativesValues.getEntry(ih) * trustRegionCenterOffset.getEntry(i));
-                        }
-                        gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + modelSecondDerivativesValues.getEntry(ih) * trustRegionCenterOffset.getEntry(j));
-                        ih++;
-                    }
-                }
-                if (getEvaluations() > numberOfInterpolationPoints) {
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        double temp = ZERO;
-                        for (int j = 0; j < dimension; j++) {
-                            temp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
-                        }
-                        temp *= modelSecondDerivativesParameters.getEntry(k);
-                        for (int i = 0; i < dimension; i++) {
-                            gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
-                        }
-                    }
-                }
-            }
-        }
         case 60: {
             // Generate the next point in the trust region that provides a small value
             // of the quadratic model subject to the constraints on the variables.
@@ -1053,6 +1027,37 @@ public class BOBYQAOptimizer
         return new PointValuePair(currentBest.getDataRef(),
             (getGoalType().equals(GoalType.MINIMIZE)) ? f : -f);
     } // bobyqb
+
+    private void initializeGradient() {
+        // to use before the optimization loop
+        // update gradientAtTrustRegionCenter if necessary before the first optimization iteration
+        // NOTE: can also be used after call of RESCUE that makes a call of CALFUN, but RESCUE is not implemented
+        if (trustRegionCenterInterpolationPointIndex != 0) {
+            int ih = 0;
+            for (int j = 0; j < dimension; j++) {
+                for (int i = 0; i <= j; i++) {
+                    if (i < j) {
+                        gradientAtTrustRegionCenter.setEntry(j, gradientAtTrustRegionCenter.getEntry(j) + modelSecondDerivativesValues.getEntry(ih) * trustRegionCenterOffset.getEntry(i));
+                    }
+                    gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + modelSecondDerivativesValues.getEntry(ih) * trustRegionCenterOffset.getEntry(j));
+                    ih++;
+                }
+            }
+            // dead code - can only happen in a RESCUE context, but RESCUE is not implemented
+            if (getEvaluations() > numberOfInterpolationPoints) {
+                for (int k = 0; k < numberOfInterpolationPoints; k++) {
+                    double temp = ZERO;
+                    for (int j = 0; j < dimension; j++) {
+                        temp += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
+                    }
+                    temp *= modelSecondDerivativesParameters.getEntry(k);
+                    for (int i = 0; i < dimension; i++) {
+                        gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
+                    }
+                }
+            }
+        }
+    }
 
     // ----------------------------------------------------------------------------------------
 
