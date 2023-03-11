@@ -1834,11 +1834,10 @@ public class BOBYQAOptimizer
             final ArrayRealVector hWComponents
     ) {
 
-        final int npt = numberOfInterpolationPoints;
-        final int nptm = npt - dimension - 1;
+        final int nptm = numberOfInterpolationPoints - dimension - 1;
 
         double ztest = ZERO;
-        for (int k = 0; k < npt; k++) {
+        for (int k = 0; k < numberOfInterpolationPoints; k++) {
             for (int j = 0; j < nptm; j++) {
                 // Computing MAX
                 ztest = JdkMath.max(ztest, JdkMath.abs(zMatrix.getEntry(k, j)));
@@ -1856,7 +1855,7 @@ public class BOBYQAOptimizer
                 final double d4 = JdkMath.sqrt(d2 + d3);
                 final double d5 = zMatrix.getEntry(kNew, 0) / d4;
                 final double d6 = zMatrix.getEntry(kNew, j) / d4;
-                for (int i = 0; i < npt; i++) {
+                for (int i = 0; i < numberOfInterpolationPoints; i++) {
                     final double d7 = d5 * zMatrix.getEntry(i, 0) + d6 * zMatrix.getEntry(i, j);
                     zMatrix.setEntry(i, j, d5 * zMatrix.getEntry(i, j) - d6 * zMatrix.getEntry(i, 0));
                     zMatrix.setEntry(i, 0, d7);
@@ -1867,8 +1866,8 @@ public class BOBYQAOptimizer
 
         // Put the first numberOfInterpolationPoints components of the KNEW-th column of HLAG
         // into W, and calculate the parameters of the updating formula.
-        final ArrayRealVector work = new ArrayRealVector(npt + dimension);
-        for (int i = 0; i < npt; i++) {
+        final ArrayRealVector work = new ArrayRealVector(numberOfInterpolationPoints + dimension);
+        for (int i = 0; i < numberOfInterpolationPoints; i++) {
             work.setEntry(i, zMatrix.getEntry(kNew, 0) * zMatrix.getEntry(i, 0));
         }
         final double alpha = work.getEntry(kNew);
@@ -1880,7 +1879,7 @@ public class BOBYQAOptimizer
         final double sqrtDenom = JdkMath.sqrt(denom);
         final double d1 = tau / sqrtDenom;
         final double d2 = zMatrix.getEntry(kNew, 0) / sqrtDenom;
-        for (int i = 0; i < npt; i++) {
+        for (int i = 0; i < numberOfInterpolationPoints; i++) {
             zMatrix.setEntry(i, 0,
                           d1 * zMatrix.getEntry(i, 0) - d2 * hWComponents.getEntry(i));
         }
@@ -1888,15 +1887,15 @@ public class BOBYQAOptimizer
         // Finally, update the matrix BMAT.
 
         for (int j = 0; j < dimension; j++) {
-            final int jp = npt + j;
+            final int jp = numberOfInterpolationPoints + j;
             work.setEntry(jp, bMatrix.getEntry(kNew, j));
             final double d3 = (alpha * hWComponents.getEntry(jp) - tau * work.getEntry(jp)) / denom;
             final double d4 = (-beta * work.getEntry(jp) - tau * hWComponents.getEntry(jp)) / denom;
             for (int i = 0; i <= jp; i++) {
                 bMatrix.setEntry(i, j,
                               bMatrix.getEntry(i, j) + d3 * hWComponents.getEntry(i) + d4 * work.getEntry(i));
-                if (i >= npt) {
-                    bMatrix.setEntry(jp, (i - npt), bMatrix.getEntry(i, j));
+                if (i >= numberOfInterpolationPoints) {
+                    bMatrix.setEntry(jp, (i - numberOfInterpolationPoints), bMatrix.getEntry(i, j));
                 }
             }
         }
