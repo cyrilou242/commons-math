@@ -1012,8 +1012,8 @@ public class BOBYQAOptimizer
             //   next values of RHO and DELTA.
         }
         case 680: {
-            // formula (6.6)
             if (rho > stoppingTrustRegionRadius) {
+                // update rho and loop formula (6.6)
                 delta = HALF * rho;
                 if (rho <= SIXTEEN * stoppingTrustRegionRadius) {
                     rho = stoppingTrustRegionRadius;
@@ -1027,33 +1027,35 @@ public class BOBYQAOptimizer
                 ntrits = 0;
                 nfsav = getEvaluations();
                 state = 60; break goto_switch;
+            } else {
+                // termination condition is met
+                break goto_for;
             }
-        }
-        case 720: {
-            // perform a Newton-Raphson step if the calculation was too short to have been tried before.
-            if (ntrits == -1) {
-                for (int i = 0; i < dimension; i++) {
-                    final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
-                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
-                    currentBest.setEntry(i, boundedNewBest);
-                }
-                f = computeF(currentBest);
-                fsave = f;
-            }
-
-            if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
-                for (int i = 0; i < dimension; i++) {
-                    final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
-                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
-                    currentBest.setEntry(i, boundedNewBest);
-                }
-                f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
-            }
-            return f;
         }
         default: {
             throw new MathIllegalStateException(LocalizedFormats.SIMPLE_MESSAGE, "bobyqb");
         }}}
+
+        // perform a Newton-Raphson step if the calculation was too short to have been tried before.
+        if (ntrits == -1) {
+            for (int i = 0; i < dimension; i++) {
+                final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
+                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
+                currentBest.setEntry(i, boundedNewBest);
+            }
+            fsave = computeF(currentBest);
+        }
+
+        if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
+            for (int i = 0; i < dimension; i++) {
+                final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
+                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
+                currentBest.setEntry(i, boundedNewBest);
+            }
+            return fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
+        }
+
+        return fsave;
     } // bobyqb
 
     // ----------------------------------------------------------------------------------------
