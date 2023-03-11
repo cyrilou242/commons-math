@@ -422,14 +422,13 @@ public class BOBYQAOptimizer
                 state = 680; break goto_switch;
             }
             ++ntrits;
-
+        }
+        case 90: {
             // Severe cancellation is likely to occur if XOPT is too far from XBASE.
             // If the following test holds, then XBASE is shifted so that XOPT becomes
             // zero. The appropriate changes are made to BMAT and to the second
             // derivatives of the current model, beginning with the changes to BMAT
             // that do not depend on ZMAT. VLAG is used temporarily for working space.
-        }
-        case 90: {
             if (dsq <= xoptsq * ONE_OVER_A_THOUSAND) {
                 final double fracsq = xoptsq * ONE_OVER_FOUR;
                 double sumpq = ZERO;
@@ -553,11 +552,11 @@ public class BOBYQAOptimizer
                 trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
             }
 
+        }
+        case 230: {
             // Calculate VLAG and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
-        }
-        case 230: {
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
                 double sumb = ZERO;
@@ -582,11 +581,9 @@ public class BOBYQAOptimizer
                     lagrangeValuesAtNewPoint.setEntry(k, lagrangeValuesAtNewPoint.getEntry(k) + sum * zMatrix.getEntry(k, m));
                 }
             }
-            dsq = ZERO;
             double bsum = ZERO;
             double dx = ZERO;
             for (int j = 0; j < dimension; j++) {
-                dsq += power2(trialStepPoint.getEntry(j));
                 double sum = ZERO;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sum += work3.getEntry(k) * bMatrix.getEntry(k, j);
@@ -600,6 +597,7 @@ public class BOBYQAOptimizer
                 bsum += sum * trialStepPoint.getEntry(j);
                 dx += trialStepPoint.getEntry(j) * trustRegionCenterOffset.getEntry(j);
             }
+            dsq = trialStepPoint.getSquaredNorm();
 
             beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + beta - bsum; // Original
             // beta += dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - bsum; // XXX "testAckley" and "testDiffPow" fail.
@@ -1763,7 +1761,6 @@ public class BOBYQAOptimizer
             }
         }
         case 190: {
-            double dsq = ZERO;
             for (int i = 0; i < dimension; i++) {
                 // Computing MAX
                 // Computing MIN
@@ -1777,8 +1774,8 @@ public class BOBYQAOptimizer
                     newPoint.setEntry(i, upperDifference.getEntry(i));
                 }
                 trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-                dsq += power2(trialStepPoint.getEntry(i));
             }
+            final double dsq = trialStepPoint.getSquaredNorm();
             return new double[] { dsq, crvmin };
             // The following instructions multiply the current S-vector by the second
             // derivative matrix of the quadratic model, putting the product in HS.
