@@ -829,9 +829,10 @@ public class BOBYQAOptimizer
 
             if (ntrits > 0) {
                 final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
+                final ArrayRealVector work30 = new ArrayRealVector(numberOfInterpolationPoints);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     work0.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
-                    work3.setEntry(k, ZERO);
+                    work30.setEntry(k, ZERO);
                 }
                 for (int j = 0; j < nptm; j++) {
                     double sum = ZERO;
@@ -839,16 +840,16 @@ public class BOBYQAOptimizer
                         sum += zMatrix.getEntry(k, j) * work0.getEntry(k);
                     }
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        work3.setEntry(k, work3.getEntry(k) + sum * zMatrix.getEntry(k, j));
+                        work30.setEntry(k, work30.getEntry(k) + sum * zMatrix.getEntry(k, j));
                     }
                 }
-                final ArrayRealVector oldWork3 = new ArrayRealVector(work3);
+                final ArrayRealVector oldWork3 = new ArrayRealVector(work30);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double sum = ZERO;
                     for (int j = 0; j < dimension; j++) {
                         sum += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
                     }
-                    work3.setEntry(k, sum * work3.getEntry(k));
+                    work30.setEntry(k, sum * work30.getEntry(k));
                 }
                 double gqsq = ZERO;
                 double gisq = ZERO;
@@ -857,7 +858,7 @@ public class BOBYQAOptimizer
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += bMatrix.getEntry(k, i) *
-                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work3.getEntry(k);
+                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work30.getEntry(k);
                     }
                     if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
                         // Computing MIN
