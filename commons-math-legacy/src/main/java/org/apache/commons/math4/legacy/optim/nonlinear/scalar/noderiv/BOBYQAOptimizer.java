@@ -278,10 +278,7 @@ public class BOBYQAOptimizer
     protected PointValuePair doOptimize() {
         init();
 
-        final double optimum = bobyqb();
-
-        return new PointValuePair(currentBest.getDataRef(),
-            (getGoalType().equals(GoalType.MINIMIZE)) ? optimum : -optimum);
+        return bobyqb();
     }
 
     // ----------------------------------------------------------------------------------------
@@ -322,7 +319,7 @@ public class BOBYQAOptimizer
      *
      * @return the value of the objective at the optimum.
      */
-    private double bobyqb() {
+    private PointValuePair bobyqb() {
         // Set some constants.
         final int np = dimension + 1;
         final int nptm = numberOfInterpolationPoints - np;
@@ -1043,7 +1040,8 @@ public class BOBYQAOptimizer
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                 currentBest.setEntry(i, boundedNewBest);
             }
-            fsave = computeF(currentBest);
+            f = computeF(currentBest);
+            fsave = f;
         }
 
         if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
@@ -1052,10 +1050,11 @@ public class BOBYQAOptimizer
                 final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
                 currentBest.setEntry(i, boundedNewBest);
             }
-            return fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
+            f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
         }
 
-        return fsave;
+        return new PointValuePair(currentBest.getDataRef(),
+            (getGoalType().equals(GoalType.MINIMIZE)) ? f : -f);
     } // bobyqb
 
     // ----------------------------------------------------------------------------------------
