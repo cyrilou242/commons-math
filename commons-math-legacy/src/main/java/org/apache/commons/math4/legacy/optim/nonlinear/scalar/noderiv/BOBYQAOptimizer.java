@@ -553,6 +553,7 @@ public class BOBYQAOptimizer
             // Calculate VLAG and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
+            final ArrayRealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
                 double sumb = ZERO;
@@ -563,7 +564,7 @@ public class BOBYQAOptimizer
                     sum += bMatrix.getEntry(k, j) * trialStepPoint.getEntry(j);
                 }
                 work3.setEntry(k, suma * (HALF * suma + sumb));
-                lagrangeValuesAtNewPoint.setEntry(k, sum);
+                workHwComponents.setEntry(k, sum);
                 work2.setEntry(k, suma);
             }
             double betaPart = ZERO;
@@ -574,7 +575,7 @@ public class BOBYQAOptimizer
                 }
                 betaPart -= sum * sum;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    lagrangeValuesAtNewPoint.setEntry(k, lagrangeValuesAtNewPoint.getEntry(k) + sum * zMatrix.getEntry(k, m));
+                    workHwComponents.setEntry(k, workHwComponents.getEntry(k) + sum * zMatrix.getEntry(k, m));
                 }
             }
 
@@ -589,7 +590,7 @@ public class BOBYQAOptimizer
                 for (int i = 0; i < dimension; i++) {
                     sum += bMatrix.getEntry(jp, i) * trialStepPoint.getEntry(i);
                 }
-                lagrangeValuesAtNewPoint.setEntry(jp, sum);
+                workHwComponents.setEntry(jp, sum);
                 bsum += sum * trialStepPoint.getEntry(j);
             }
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
@@ -599,15 +600,15 @@ public class BOBYQAOptimizer
             // beta += dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - bsum; // XXX "testAckley" and "testDiffPow" fail.
             // beta = dx * dx + dsq * (xoptsq + 2 * dx + HALF * dsq) + beta - bsum; // XXX "testDiffPow" fails.
 
-            lagrangeValuesAtNewPoint.setEntry(trustRegionCenterInterpolationPointIndex,
-                          lagrangeValuesAtNewPoint.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
+            workHwComponents.setEntry(trustRegionCenterInterpolationPointIndex,
+                workHwComponents.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
             // If NTRITS is zero, the denominator may be increased by replacing
             // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
             // rounding errors have damaged the chosen denominator.
 
             if (ntrits == 0) {
-                denom = power2(lagrangeValuesAtNewPoint.getEntry(kNew)) + alpha * beta;
+                denom = power2(workHwComponents.getEntry(kNew)) + alpha * beta;
                 if (denom < cauchy && cauchy > ZERO) {
                     for (int i = 0; i < dimension; i++) {
                         newPoint.setEntry(i, alternativeNewPoint.getEntry(i));
@@ -634,7 +635,7 @@ public class BOBYQAOptimizer
                     for (int m = 0; m < nptm; m++) {
                         hdiag += power2(zMatrix.getEntry(k, m));
                     }
-                    final double den = beta * hdiag + power2(lagrangeValuesAtNewPoint.getEntry(k));
+                    final double den = beta * hdiag + power2(workHwComponents.getEntry(k));
                     distsq = ZERO;
                     for (int j = 0; j < dimension; j++) {
                         distsq += power2(interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
@@ -647,7 +648,7 @@ public class BOBYQAOptimizer
                         denom = den;
                     }
                     // Computing MAX
-                    biglsq = JdkMath.max(biglsq, temp * power2(lagrangeValuesAtNewPoint.getEntry(k)));
+                    biglsq = JdkMath.max(biglsq, temp * power2(workHwComponents.getEntry(k)));
                 }
             }
 
@@ -727,7 +728,7 @@ public class BOBYQAOptimizer
                         for (int m = 0; m < nptm; m++) {
                             hdiag += power2(zMatrix.getEntry(k, m));
                         }
-                        final double den = beta * hdiag + power2(lagrangeValuesAtNewPoint.getEntry(k));
+                        final double den = beta * hdiag + power2(workHwComponents.getEntry(k));
                         distsq = ZERO;
                         for (int j = 0; j < dimension; j++) {
                             distsq += power2(interpolationPoints.getEntry(k, j) - newPoint.getEntry(j));
@@ -740,7 +741,7 @@ public class BOBYQAOptimizer
                             denom = den;
                         }
                         // Computing MAX
-                        final double d5 = temp * power2(lagrangeValuesAtNewPoint.getEntry(k));
+                        final double d5 = temp * power2(workHwComponents.getEntry(k));
                         biglsq = JdkMath.max(biglsq, d5);
                     }
                     if (scaden <= HALF * biglsq) {
@@ -752,9 +753,7 @@ public class BOBYQAOptimizer
 
             // Update BMAT and ZMAT, so that the KNEW-th interpolation point can be
             // moved. Also update the second derivative terms of the model.
-
-            final ArrayRealVector hwComponents = new ArrayRealVector(lagrangeValuesAtNewPoint);
-            update(beta, denom, kNew, hwComponents);
+            update(beta, denom, kNew, workHwComponents);
 
             ih = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
