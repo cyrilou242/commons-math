@@ -753,7 +753,8 @@ public class BOBYQAOptimizer
             // Update BMAT and ZMAT, so that the KNEW-th interpolation point can be
             // moved. Also update the second derivative terms of the model.
 
-            update(beta, denom, kNew);
+            final ArrayRealVector hwComponents = new ArrayRealVector(lagrangeValuesAtNewPoint);
+            update(beta, denom, kNew, hwComponents);
 
             ih = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
@@ -1827,11 +1828,14 @@ public class BOBYQAOptimizer
      * @param beta
      * @param denom
      * @param kNew
+     * @param hWComponents Has N+NPT components, set on entry to the first NPT and last N components
+     *        of the product Hw in equation (4.11) of the Powell (2006) paper on NEWUOA.
      */
     private void update(
             final double beta,
             final double denom,
-            final int kNew
+            final int kNew,
+            final ArrayRealVector hWComponents
     ) {
 
         final int npt = numberOfInterpolationPoints;
@@ -1872,8 +1876,8 @@ public class BOBYQAOptimizer
             work.setEntry(i, zMatrix.getEntry(kNew, 0) * zMatrix.getEntry(i, 0));
         }
         final double alpha = work.getEntry(kNew);
-        final double tau = lagrangeValuesAtNewPoint.getEntry(kNew);
-        lagrangeValuesAtNewPoint.setEntry(kNew, lagrangeValuesAtNewPoint.getEntry(kNew) - ONE);
+        final double tau = hWComponents.getEntry(kNew);
+        hWComponents.setEntry(kNew, hWComponents.getEntry(kNew) - ONE);
 
         // Complete the updating of ZMAT.
 
@@ -1882,7 +1886,7 @@ public class BOBYQAOptimizer
         final double d2 = zMatrix.getEntry(kNew, 0) / sqrtDenom;
         for (int i = 0; i < npt; i++) {
             zMatrix.setEntry(i, 0,
-                          d1 * zMatrix.getEntry(i, 0) - d2 * lagrangeValuesAtNewPoint.getEntry(i));
+                          d1 * zMatrix.getEntry(i, 0) - d2 * hWComponents.getEntry(i));
         }
 
         // Finally, update the matrix BMAT.
@@ -1890,11 +1894,11 @@ public class BOBYQAOptimizer
         for (int j = 0; j < dimension; j++) {
             final int jp = npt + j;
             work.setEntry(jp, bMatrix.getEntry(kNew, j));
-            final double d3 = (alpha * lagrangeValuesAtNewPoint.getEntry(jp) - tau * work.getEntry(jp)) / denom;
-            final double d4 = (-beta * work.getEntry(jp) - tau * lagrangeValuesAtNewPoint.getEntry(jp)) / denom;
+            final double d3 = (alpha * hWComponents.getEntry(jp) - tau * work.getEntry(jp)) / denom;
+            final double d4 = (-beta * work.getEntry(jp) - tau * hWComponents.getEntry(jp)) / denom;
             for (int i = 0; i <= jp; i++) {
                 bMatrix.setEntry(i, j,
-                              bMatrix.getEntry(i, j) + d3 * lagrangeValuesAtNewPoint.getEntry(i) + d4 * work.getEntry(i));
+                              bMatrix.getEntry(i, j) + d3 * hWComponents.getEntry(i) + d4 * work.getEntry(i));
                 if (i >= npt) {
                     bMatrix.setEntry(jp, (i - npt), bMatrix.getEntry(i, j));
                 }
