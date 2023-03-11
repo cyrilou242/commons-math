@@ -168,8 +168,7 @@ public class BOBYQAOptimizer
      */
     private ArrayRealVector modelSecondDerivativesParameters;
     /**
-     * Point chosen by function {@link #trsbox(double,ArrayRealVector,
-     * ArrayRealVector, ArrayRealVector,ArrayRealVector,ArrayRealVector) trsbox}
+     * Point chosen by function {@link #trsbox(double) trsbox}
      * or {@link #altmov(int,double) altmov}.
      * Usually {@link #originShift} + {@link #newPoint} is the vector of
      * variables for the next evaluation of the objective function.
@@ -457,14 +456,15 @@ public class BOBYQAOptimizer
                         sumz += zMatrix.getEntry(k, m);
                     }
                     double sumw = ZERO;
+                    final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        lagrangeValuesAtNewPoint.setEntry(k, workVector.getEntry(k) * zMatrix.getEntry(k, m));
-                        sumw += lagrangeValuesAtNewPoint.getEntry(k);
+                        work0.setEntry(k, workVector.getEntry(k) * zMatrix.getEntry(k, m));
+                        sumw += work0.getEntry(k);
                     }
                     for (int j = 0; j < dimension; j++) {
                         double sum = (fracsq * sumz - HALF * sumw) * trustRegionCenterOffset.getEntry(j);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                            sum += lagrangeValuesAtNewPoint.getEntry(k) * interpolationPoints.getEntry(k, j);
+                            sum += work0.getEntry(k) * interpolationPoints.getEntry(k, j);
                         }
                         work1.setEntry(j, sum);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
