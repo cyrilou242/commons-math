@@ -460,9 +460,11 @@ public class BOBYQAOptimizer
 
                 for (int m = 0; m < nptm; m++) {
                     double sumz = ZERO;
-                    double sumw = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sumz += zMatrix.getEntry(k, m);
+                    }
+                    double sumw = ZERO;
+                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         lagrangeValuesAtNewPoint.setEntry(k, work2.getEntry(k) * zMatrix.getEntry(k, m));
                         sumw += lagrangeValuesAtNewPoint.getEntry(k);
                     }
