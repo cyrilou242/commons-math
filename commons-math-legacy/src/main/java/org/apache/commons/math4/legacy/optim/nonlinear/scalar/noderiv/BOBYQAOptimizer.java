@@ -435,15 +435,16 @@ public class BOBYQAOptimizer
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     final double sum = workVector.getEntry(k);
                     final double temp = fracsq - HALF * sum;
+                    final ArrayRealVector work0 = new ArrayRealVector(dimension);
                     for (int i = 0; i < dimension; i++) {
                         work1.setEntry(i, bMatrix.getEntry(k, i));
-                        lagrangeValuesAtNewPoint.setEntry(i, sum * interpolationPoints.getEntry(k, i) + temp * trustRegionCenterOffset.getEntry(i));
+                        work0.setEntry(i, sum * interpolationPoints.getEntry(k, i) + temp * trustRegionCenterOffset.getEntry(i));
                         final int ip = numberOfInterpolationPoints + i;
                         for (int j = 0; j <= i; j++) {
                             bMatrix.setEntry(ip, j,
                                           bMatrix.getEntry(ip, j)
-                                          + work1.getEntry(i) * lagrangeValuesAtNewPoint.getEntry(j)
-                                          + lagrangeValuesAtNewPoint.getEntry(i) * work1.getEntry(j));
+                                          + work1.getEntry(i) * work0.getEntry(j)
+                                          + work0.getEntry(i) * work1.getEntry(j));
                         }
                     }
                 }
