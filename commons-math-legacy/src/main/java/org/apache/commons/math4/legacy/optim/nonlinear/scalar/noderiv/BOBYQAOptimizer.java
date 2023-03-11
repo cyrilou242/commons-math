@@ -320,7 +320,6 @@ public class BOBYQAOptimizer
         final int nh = dimension * np / 2;
 
         final ArrayRealVector work1 = new ArrayRealVector(dimension);
-        final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
 
         double cauchy = Double.NaN;
         double alpha = Double.NaN;
@@ -549,6 +548,7 @@ public class BOBYQAOptimizer
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
             final ArrayRealVector work2 = new ArrayRealVector(numberOfInterpolationPoints);
+            final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
             final ArrayRealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
                 double suma = ZERO;
