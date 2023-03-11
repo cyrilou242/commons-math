@@ -24,6 +24,7 @@ import org.apache.commons.math4.legacy.exception.OutOfRangeException;
 import org.apache.commons.math4.legacy.exception.util.LocalizedFormats;
 import org.apache.commons.math4.legacy.linear.Array2DRowRealMatrix;
 import org.apache.commons.math4.legacy.linear.ArrayRealVector;
+import org.apache.commons.math4.legacy.linear.RealMatrix;
 import org.apache.commons.math4.legacy.linear.RealVector;
 import org.apache.commons.math4.legacy.optim.PointValuePair;
 import org.apache.commons.math4.legacy.optim.nonlinear.scalar.GoalType;
@@ -549,21 +550,16 @@ public class BOBYQAOptimizer
             // use when VQUAD is calculated.
             final RealVector work2 = interpolationPoints.operate(trialStepPoint);
             final RealVector workb = interpolationPoints.operate(trustRegionCenterOffset);
-            final RealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
-            workHwComponents.setSubVector(0, bMatrix.operate(trialStepPoint));
             // TODO CYRIL can be optimized by implementing more toSelf operations addToSelf and ebeToSelf
             final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
+            final RealVector work4 = zMatrix.preMultiply(work3);
 
-            double betaPart = ZERO;
-            for (int m = 0; m < nptm; m++) {
-                double sum = ZERO;
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    sum += zMatrix.getEntry(k, m) * work3.getEntry(k);
-                }
-                betaPart -= sum * sum;
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    workHwComponents.setEntry(k, workHwComponents.getEntry(k) + sum * zMatrix.getEntry(k, m));
-                }
+            // TODO try to break workHwComponents into 2 matrices  - start by doing it inside the update() method
+            final RealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
+            workHwComponents.setSubVector(0, bMatrix.operate(trialStepPoint));
+            final RealVector w1 = zMatrix.transpose().preMultiply(work4);
+            for (int k = 0; k < numberOfInterpolationPoints; k++) {
+                workHwComponents.setEntry(k, workHwComponents.getEntry(k) + w1.getEntry(k));
             }
 
             double bsum = ZERO;
@@ -583,9 +579,8 @@ public class BOBYQAOptimizer
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
             dsq = trialStepPoint.getSquaredNorm();
 
+            final double betaPart = - work4.dotProduct(work4);
             beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + betaPart - bsum; // Original
-            // beta += dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - bsum; // XXX "testAckley" and "testDiffPow" fail.
-            // beta = dx * dx + dsq * (xoptsq + 2 * dx + HALF * dsq) + beta - bsum; // XXX "testDiffPow" fails.
 
             workHwComponents.setEntry(trustRegionCenterInterpolationPointIndex,
                 workHwComponents.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
