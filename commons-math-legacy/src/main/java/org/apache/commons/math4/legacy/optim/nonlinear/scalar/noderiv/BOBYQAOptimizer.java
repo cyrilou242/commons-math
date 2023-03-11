@@ -833,14 +833,15 @@ public class BOBYQAOptimizer
             // into VLAG(numberOfInterpolationPoints+I), I=1,2,...,N.
 
             if (ntrits > 0) {
+                final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    lagrangeValuesAtNewPoint.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
+                    work0.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
                     work3.setEntry(k, ZERO);
                 }
                 for (int j = 0; j < nptm; j++) {
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        sum += zMatrix.getEntry(k, j) * lagrangeValuesAtNewPoint.getEntry(k);
+                        sum += zMatrix.getEntry(k, j) * work0.getEntry(k);
                     }
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         work3.setEntry(k, work3.getEntry(k) + sum * zMatrix.getEntry(k, j));
@@ -856,11 +857,12 @@ public class BOBYQAOptimizer
                 }
                 double gqsq = ZERO;
                 double gisq = ZERO;
+                final ArrayRealVector leastFrobeniusNormInterpolantGradient = new ArrayRealVector(dimension);
                 for (int i = 0; i < dimension; i++) {
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += bMatrix.getEntry(k, i) *
-                            lagrangeValuesAtNewPoint.getEntry(k) + interpolationPoints.getEntry(k, i) * work3.getEntry(k);
+                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work3.getEntry(k);
                     }
                     if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
                         // Computing MIN
@@ -874,7 +876,7 @@ public class BOBYQAOptimizer
                         gqsq += power2(gradientAtTrustRegionCenter.getEntry(i));;
                         gisq += sum * sum;
                     }
-                    lagrangeValuesAtNewPoint.setEntry(numberOfInterpolationPoints + i, sum);
+                    leastFrobeniusNormInterpolantGradient.setEntry(i, sum);
                 }
 
                 // Test whether to replace the new quadratic model by the least Frobenius
@@ -887,8 +889,7 @@ public class BOBYQAOptimizer
                 if (itest >= 3) {
                     for (int i = 0, max = JdkMath.max(numberOfInterpolationPoints, nh); i < max; i++) {
                         if (i < dimension) {
-                            gradientAtTrustRegionCenter.setEntry(i, lagrangeValuesAtNewPoint.getEntry(
-                                numberOfInterpolationPoints + i));
+                            gradientAtTrustRegionCenter.setEntry(i, leastFrobeniusNormInterpolantGradient.getEntry(i));
                         }
                         if (i < numberOfInterpolationPoints) {
                             modelSecondDerivativesParameters.setEntry(i, oldWork3.getEntry(i));
