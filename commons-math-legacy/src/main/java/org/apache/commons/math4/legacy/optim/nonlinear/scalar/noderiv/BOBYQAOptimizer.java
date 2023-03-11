@@ -370,7 +370,7 @@ public class BOBYQAOptimizer
         // call of RESCUE that makes a call of CALFUN.
 
         int state = 20;
-        for(;;) {
+        goto_for: for(;;) {
         goto_switch: switch (state) {
         case 20: {
             if (trustRegionCenterInterpolationPointIndex != kbase) {
@@ -707,11 +707,6 @@ public class BOBYQAOptimizer
             }
             f = computeF(currentBest);
 
-            if (ntrits == -1) {
-                fsave = f;
-                state = 720; break goto_switch;
-            }
-
             // Use the quadratic model to predict the change in F due to the step D,
             //   and set DIFF to the error of this prediction.
 
@@ -1017,30 +1012,35 @@ public class BOBYQAOptimizer
             //   next values of RHO and DELTA.
         }
         case 680: {
+            // formula (6.6)
             if (rho > stoppingTrustRegionRadius) {
                 delta = HALF * rho;
-                ratio = rho / stoppingTrustRegionRadius;
-                if (ratio <= SIXTEEN) {
+                if (rho <= SIXTEEN * stoppingTrustRegionRadius) {
                     rho = stoppingTrustRegionRadius;
-                } else if (ratio <= TWO_HUNDRED_FIFTY) {
-                    rho = JdkMath.sqrt(ratio) * stoppingTrustRegionRadius;
+                } else if (rho <= TWO_HUNDRED_FIFTY * stoppingTrustRegionRadius) {
+                    rho = JdkMath.sqrt(rho * stoppingTrustRegionRadius) ;
                 } else {
-                    rho *= ONE_OVER_TEN;
+                    // note: the formula in the BOBYQA paper has a typo. For correct formula see (7.6) of The NEWUOA software for unconstrained optimization without derivatives.
+                    rho = ONE_OVER_TEN * rho;
                 }
                 delta = JdkMath.max(delta, rho);
                 ntrits = 0;
                 nfsav = getEvaluations();
                 state = 60; break goto_switch;
             }
-
-            // Return from the calculation, after another Newton-Raphson step, if
-            //   it is too short to have been tried before.
-
-            if (ntrits == -1) {
-                state = 360; break goto_switch;
-            }
         }
         case 720: {
+            // perform a Newton-Raphson step if the calculation was too short to have been tried before.
+            if (ntrits == -1) {
+                for (int i = 0; i < dimension; i++) {
+                    final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
+                    final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
+                    currentBest.setEntry(i, boundedNewBest);
+                }
+                f = computeF(currentBest);
+                fsave = f;
+            }
+
             if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
                 for (int i = 0; i < dimension; i++) {
                     final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
