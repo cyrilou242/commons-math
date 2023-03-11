@@ -192,11 +192,6 @@ public class BOBYQAOptimizer
      */
     private ArrayRealVector trialStepPoint;
     /**
-     * Values of the Lagrange functions at a new point.
-     * XXX "vlag" in the original code.
-     */
-    private ArrayRealVector lagrangeValuesAtNewPoint;
-    /**
      * Explicit second derivatives of the quadratic model.
      * XXX "hq" in the original code.
      */
@@ -1936,7 +1931,6 @@ public class BOBYQAOptimizer
         newPoint = new ArrayRealVector(dimension);
         alternativeNewPoint = new ArrayRealVector(dimension);
         trialStepPoint = new ArrayRealVector(dimension);
-        lagrangeValuesAtNewPoint = new ArrayRealVector(dimension + numberOfInterpolationPoints);
         modelSecondDerivativesParameters = new ArrayRealVector(numberOfInterpolationPoints);
 
         // Initialize bound differences: differences between the upper and lower bounds.
