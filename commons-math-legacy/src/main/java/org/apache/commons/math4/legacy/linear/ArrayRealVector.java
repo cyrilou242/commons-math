@@ -466,11 +466,15 @@ public class ArrayRealVector extends RealVector implements Serializable {
     /** {@inheritDoc} */
     @Override
     public double getNorm() {
+        return JdkMath.sqrt(getSquaredNorm());
+    }
+
+    public double getSquaredNorm() {
         double sum = 0;
         for (double a : data) {
             sum += a * a;
         }
-        return JdkMath.sqrt(sum);
+        return sum;
     }
 
     /** {@inheritDoc} */
