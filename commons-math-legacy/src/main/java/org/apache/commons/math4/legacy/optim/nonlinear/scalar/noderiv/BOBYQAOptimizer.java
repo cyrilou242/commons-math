@@ -453,7 +453,6 @@ public class BOBYQAOptimizer
                         }
                     }
                 }
-                final double sumpq = modelSecondDerivativesParameters.getSum();
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
 
@@ -493,6 +492,7 @@ public class BOBYQAOptimizer
                 // The following instructions complete the shift, including the changes
                 // to the second derivative parameters of the quadratic model.
 
+                final double sumpq = modelSecondDerivativesParameters.getSum();
                 int ih = 0;
                 for (int j = 0; j < dimension; j++) {
                     work1.setEntry(j, -HALF * sumpq * trustRegionCenterOffset.getEntry(j));
