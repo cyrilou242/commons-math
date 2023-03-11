@@ -544,23 +544,16 @@ public class BOBYQAOptimizer
 
         }
         case 230: {
-            // Calculate VLAG and BETA for the current choice of D. The scalar
+            // Calculate Hw components and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
-            final ArrayRealVector work3 = new ArrayRealVector(numberOfInterpolationPoints);
-            final ArrayRealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
             final RealVector work2 = interpolationPoints.operate(trialStepPoint);
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                double sumb = ZERO;
-                double sum = ZERO;
-                for (int j = 0; j < dimension; j++) {
-                    sumb += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
-                    sum += bMatrix.getEntry(k, j) * trialStepPoint.getEntry(j);
-                }
-                double suma =  work2.getEntry(k);
-                work3.setEntry(k, suma * (HALF * suma + sumb));
-                workHwComponents.setEntry(k, sum);
-            }
+            final RealVector workb = interpolationPoints.operate(trustRegionCenterOffset);
+            final RealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
+            workHwComponents.setSubVector(0, bMatrix.operate(trialStepPoint));
+            // TODO CYRIL can be optimized by implementing more toSelf operations addToSelf and ebeToSelf
+            final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
+
             double betaPart = ZERO;
             for (int m = 0; m < nptm; m++) {
                 double sum = ZERO;
@@ -1830,7 +1823,7 @@ public class BOBYQAOptimizer
             final double beta,
             final double denom,
             final int kNew,
-            final ArrayRealVector hWComponents
+            final RealVector hWComponents
     ) {
 
         final int nptm = numberOfInterpolationPoints - dimension - 1;
