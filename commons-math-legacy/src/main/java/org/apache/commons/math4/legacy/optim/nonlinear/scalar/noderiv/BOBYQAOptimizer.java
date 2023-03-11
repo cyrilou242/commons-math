@@ -431,11 +431,9 @@ public class BOBYQAOptimizer
             // that do not depend on ZMAT. VLAG is used temporarily for working space.
             if (dsq <= xoptsq * ONE_OVER_A_THOUSAND) {
                 final double fracsq = xoptsq * ONE_OVER_FOUR;
-                double sumpq = ZERO;
                 // final RealVector sumVector
                 //     = new ArrayRealVector(npt, -HALF * xoptsq).add(interpolationPoints.operate(trustRegionCenter));
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    sumpq += modelSecondDerivativesParameters.getEntry(k);
                     double sum = -HALF * xoptsq;
                     for (int i = 0; i < dimension; i++) {
                         sum += interpolationPoints.getEntry(k, i) * trustRegionCenterOffset.getEntry(i);
@@ -455,6 +453,7 @@ public class BOBYQAOptimizer
                         }
                     }
                 }
+                final double sumpq = modelSecondDerivativesParameters.getSum();
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
 
