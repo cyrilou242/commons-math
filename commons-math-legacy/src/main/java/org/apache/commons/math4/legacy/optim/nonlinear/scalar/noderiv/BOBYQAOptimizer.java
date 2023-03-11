@@ -570,19 +570,19 @@ public class BOBYQAOptimizer
                 lagrangeValuesAtNewPoint.setEntry(k, sum);
                 work2.setEntry(k, suma);
             }
-            beta = ZERO;
+            double betaPart = ZERO;
             for (int m = 0; m < nptm; m++) {
                 double sum = ZERO;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     sum += zMatrix.getEntry(k, m) * work3.getEntry(k);
                 }
-                beta -= sum * sum;
+                betaPart -= sum * sum;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     lagrangeValuesAtNewPoint.setEntry(k, lagrangeValuesAtNewPoint.getEntry(k) + sum * zMatrix.getEntry(k, m));
                 }
             }
+
             double bsum = ZERO;
-            double dx = ZERO;
             for (int j = 0; j < dimension; j++) {
                 double sum = ZERO;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
@@ -595,11 +595,11 @@ public class BOBYQAOptimizer
                 }
                 lagrangeValuesAtNewPoint.setEntry(jp, sum);
                 bsum += sum * trialStepPoint.getEntry(j);
-                dx += trialStepPoint.getEntry(j) * trustRegionCenterOffset.getEntry(j);
             }
+            final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
             dsq = trialStepPoint.getSquaredNorm();
 
-            beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + beta - bsum; // Original
+            beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + betaPart - bsum; // Original
             // beta += dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - bsum; // XXX "testAckley" and "testDiffPow" fail.
             // beta = dx * dx + dsq * (xoptsq + 2 * dx + HALF * dsq) + beta - bsum; // XXX "testDiffPow" fails.
 
