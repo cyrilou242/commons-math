@@ -352,7 +352,6 @@ public class BOBYQAOptimizer
         double denominator = ZERO;
         double ratio = ZERO;
         double dnorm = ZERO;
-        double biglsq = ZERO;
         double distsq = ZERO;
 
         initializeGradient();
@@ -681,7 +680,7 @@ public class BOBYQAOptimizer
                     final double densav = denominator;
                     final double delsq = delta * delta;
                     double maximumWeightedDenominator = ZERO;
-                    biglsq = ZERO;
+                    double biglsq = ZERO;
                     kNew = 0;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));;
