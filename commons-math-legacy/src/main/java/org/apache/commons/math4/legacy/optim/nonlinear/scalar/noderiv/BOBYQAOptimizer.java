@@ -554,14 +554,10 @@ public class BOBYQAOptimizer
             final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
             final RealVector work4 = zMatrix.preMultiply(work3);
 
-            // TODO try to break workHwComponents into 2 matrices  - start by doing it inside the update() method
-            final RealVector workHwComponents = new ArrayRealVector(numberOfInterpolationPoints + dimension);
-            workHwComponents.setSubVector(0, bMatrix.operate(trialStepPoint));
             final RealVector w1 = zMatrix.transpose().preMultiply(work4);
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                workHwComponents.setEntry(k, workHwComponents.getEntry(k) + w1.getEntry(k));
-            }
+            final RealVector startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(w1);
 
+            final RealVector tailOfHw = new ArrayRealVector(dimension);
             double bsum = ZERO;
             for (int j = 0; j < dimension; j++) {
                 double sum = ZERO;
@@ -573,7 +569,7 @@ public class BOBYQAOptimizer
                 for (int i = 0; i < dimension; i++) {
                     sum += bMatrix.getEntry(jp, i) * trialStepPoint.getEntry(i);
                 }
-                workHwComponents.setEntry(jp, sum);
+                tailOfHw.setEntry(j, sum);
                 bsum += sum * trialStepPoint.getEntry(j);
             }
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
@@ -582,15 +578,15 @@ public class BOBYQAOptimizer
             final double betaPart = - work4.dotProduct(work4);
             beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + betaPart - bsum; // Original
 
-            workHwComponents.setEntry(trustRegionCenterInterpolationPointIndex,
-                workHwComponents.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
+            startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
+                startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
             // If NTRITS is zero, the denominator may be increased by replacing
             // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
             // rounding errors have damaged the chosen denominator.
 
             if (ntrits == 0) {
-                denom = power2(workHwComponents.getEntry(kNew)) + alpha * beta;
+                denom = power2(startOfHw.getEntry(kNew)) + alpha * beta;
                 if (denom < cauchy && cauchy > ZERO) {
                     for (int i = 0; i < dimension; i++) {
                         newPoint.setEntry(i, alternativeNewPoint.getEntry(i));
@@ -617,7 +613,7 @@ public class BOBYQAOptimizer
                     for (int m = 0; m < nptm; m++) {
                         hdiag += power2(zMatrix.getEntry(k, m));
                     }
-                    final double den = beta * hdiag + power2(workHwComponents.getEntry(k));
+                    final double den = beta * hdiag + power2(startOfHw.getEntry(k));
                     distsq = ZERO;
                     for (int j = 0; j < dimension; j++) {
                         distsq += power2(interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
@@ -630,7 +626,7 @@ public class BOBYQAOptimizer
                         denom = den;
                     }
                     // Computing MAX
-                    biglsq = JdkMath.max(biglsq, temp * power2(workHwComponents.getEntry(k)));
+                    biglsq = JdkMath.max(biglsq, temp * power2(startOfHw.getEntry(k)));
                 }
             }
 
@@ -710,7 +706,7 @@ public class BOBYQAOptimizer
                         for (int m = 0; m < nptm; m++) {
                             hdiag += power2(zMatrix.getEntry(k, m));
                         }
-                        final double den = beta * hdiag + power2(workHwComponents.getEntry(k));
+                        final double den = beta * hdiag + power2(startOfHw.getEntry(k));
                         distsq = ZERO;
                         for (int j = 0; j < dimension; j++) {
                             distsq += power2(interpolationPoints.getEntry(k, j) - newPoint.getEntry(j));
@@ -723,7 +719,7 @@ public class BOBYQAOptimizer
                             denom = den;
                         }
                         // Computing MAX
-                        final double d5 = temp * power2(workHwComponents.getEntry(k));
+                        final double d5 = temp * power2(startOfHw.getEntry(k));
                         biglsq = JdkMath.max(biglsq, d5);
                     }
                     if (scaden <= HALF * biglsq) {
@@ -735,7 +731,7 @@ public class BOBYQAOptimizer
 
             // Update BMAT and ZMAT, so that the KNEW-th interpolation point can be
             // moved. Also update the second derivative terms of the model.
-            update(beta, denom, kNew, workHwComponents);
+            update(beta, denom, kNew, startOfHw, tailOfHw);
 
             ih = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
@@ -1811,14 +1807,15 @@ public class BOBYQAOptimizer
      * @param beta
      * @param denom
      * @param kNew
-     * @param hWComponents Has N+NPT components, set on entry to the first NPT and last N components
-     *        of the product Hw in equation (4.11) of the Powell (2006) paper on NEWUOA.
+     * @param startOfHw has NPT components, the first NPT components of the product Hw in equation (4.11) of the Powell (2006) paper on NEWUOA.
+     * @param tailOfHw has N components, the last N components of the product Hw in equation (4.11) of the Powell (2006) paper on NEWUOA.
      */
     private void update(
             final double beta,
             final double denom,
             final int kNew,
-            final RealVector hWComponents
+            final RealVector startOfHw,
+            final RealVector tailOfHw
     ) {
 
         final int nptm = numberOfInterpolationPoints - dimension - 1;
@@ -1857,9 +1854,10 @@ public class BOBYQAOptimizer
         for (int i = 0; i < numberOfInterpolationPoints; i++) {
             work.setEntry(i, zMatrix.getEntry(kNew, 0) * zMatrix.getEntry(i, 0));
         }
+
         final double alpha = work.getEntry(kNew);
-        final double tau = hWComponents.getEntry(kNew);
-        hWComponents.setEntry(kNew, hWComponents.getEntry(kNew) - ONE);
+        final double tau = startOfHw.getEntry(kNew);
+        startOfHw.setEntry(kNew, startOfHw.getEntry(kNew) - ONE);
 
         // Complete the updating of ZMAT.
 
@@ -1868,7 +1866,7 @@ public class BOBYQAOptimizer
         final double d2 = zMatrix.getEntry(kNew, 0) / sqrtDenom;
         for (int i = 0; i < numberOfInterpolationPoints; i++) {
             zMatrix.setEntry(i, 0,
-                          d1 * zMatrix.getEntry(i, 0) - d2 * hWComponents.getEntry(i));
+                          d1 * zMatrix.getEntry(i, 0) - d2 * startOfHw.getEntry(i));
         }
 
         // Finally, update the matrix BMAT.
@@ -1876,12 +1874,17 @@ public class BOBYQAOptimizer
         for (int j = 0; j < dimension; j++) {
             final int jp = numberOfInterpolationPoints + j;
             work.setEntry(jp, bMatrix.getEntry(kNew, j));
-            final double d3 = (alpha * hWComponents.getEntry(jp) - tau * work.getEntry(jp)) / denom;
-            final double d4 = (-beta * work.getEntry(jp) - tau * hWComponents.getEntry(jp)) / denom;
+            final double d3 = (alpha * tailOfHw.getEntry(j) - tau * work.getEntry(jp)) / denom;
+            final double d4 = (-beta * work.getEntry(jp) - tau * tailOfHw.getEntry(j)) / denom;
             for (int i = 0; i <= jp; i++) {
-                bMatrix.setEntry(i, j,
-                              bMatrix.getEntry(i, j) + d3 * hWComponents.getEntry(i) + d4 * work.getEntry(i));
-                if (i >= numberOfInterpolationPoints) {
+                if (i < numberOfInterpolationPoints) {
+                    bMatrix.setEntry(i, j,
+                        bMatrix.getEntry(i, j) + d3 * startOfHw.getEntry(i) + d4 * work.getEntry(
+                            i));
+                } else {
+                    bMatrix.setEntry(i, j,
+                        bMatrix.getEntry(i, j) + d3 * tailOfHw.getEntry(i - numberOfInterpolationPoints) + d4 * work.getEntry(
+                            i));
                     bMatrix.setEntry(jp, (i - numberOfInterpolationPoints), bMatrix.getEntry(i, j));
                 }
             }
