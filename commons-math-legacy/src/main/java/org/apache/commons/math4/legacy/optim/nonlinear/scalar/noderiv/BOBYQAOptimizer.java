@@ -640,10 +640,9 @@ public class BOBYQAOptimizer
             //   and set DIFF to the error of this prediction.
 
             final double fopt = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
-            double vquad = ZERO;
+            double vquad = trialStepPoint.dotProduct(gradientAtTrustRegionCenter);
             int ih = 0;
             for (int j = 0; j < dimension; j++) {
-                vquad += trialStepPoint.getEntry(j) * gradientAtTrustRegionCenter.getEntry(j);
                 for (int i = 0; i <= j; i++) {
                     double temp = trialStepPoint.getEntry(i) * trialStepPoint.getEntry(j);
                     if (i == j) {
