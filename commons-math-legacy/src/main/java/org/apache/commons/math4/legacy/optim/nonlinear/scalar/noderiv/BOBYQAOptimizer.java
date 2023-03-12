@@ -604,23 +604,18 @@ public class BOBYQAOptimizer
                     if (k == trustRegionCenterInterpolationPointIndex) {
                         continue;
                     }
-                    double hdiag = ZERO;
-                    for (int m = 0; m < nptm; m++) {
-                        hdiag += power2(zMatrix.getEntry(k, m));
-                    }
+                    final double hdiag = zMatrix.getRowVectorRef(k).dotProduct(zMatrix.getRowVectorRef(k));
                     final double den = beta * hdiag + power2(startOfHw.getEntry(k));
-                    distsq = ZERO;
-                    for (int j = 0; j < dimension; j++) {
-                        distsq += power2(interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
-                    }
-                    // Computing MAX
+                    final RealVector tmp = interpolationPoints.getRowVectorRef(k).subtract(trustRegionCenterOffset);
+                    distsq = tmp.dotProduct(tmp);
+
                     final double temp = JdkMath.max(ONE, power2(distsq / delsq));
                     if (temp * den > scaden) {
                         scaden = temp * den;
                         kNew = k;
                         denom = den;
                     }
-                    // Computing MAX
+                    // biglsq can be used for the rescue protocol - not implemented
                     biglsq = JdkMath.max(biglsq, temp * power2(startOfHw.getEntry(k)));
                 }
             }
