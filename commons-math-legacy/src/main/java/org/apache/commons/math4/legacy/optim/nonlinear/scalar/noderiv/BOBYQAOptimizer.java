@@ -559,11 +559,12 @@ public class BOBYQAOptimizer
 
             final RealVector tailOfHw = new ArrayRealVector(dimension);
             double bsum = ZERO;
+            final RealVector sumArray1 = bMatrix
+                .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension - 1)
+                .preMultiply(work3);
+
             for (int j = 0; j < dimension; j++) {
-                double sum = ZERO;
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    sum += work3.getEntry(k) * bMatrix.getEntry(k, j);
-                }
+                double sum = sumArray1.getEntry(j);
                 bsum += sum * trialStepPoint.getEntry(j);
                 final int jp = numberOfInterpolationPoints + j;
                 for (int i = 0; i < dimension; i++) {
