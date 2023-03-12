@@ -352,7 +352,6 @@ public class BOBYQAOptimizer
         double denominator = ZERO;
         double ratio = ZERO;
         double dnorm = ZERO;
-        double maximumWeightedDenominator = ZERO;
         double biglsq = ZERO;
         double distsq = ZERO;
 
@@ -590,7 +589,7 @@ public class BOBYQAOptimizer
                 // the next interpolation point to be deleted to make room for a trust
                 // region step.
                 final double deltaSquared = delta * delta;
-                maximumWeightedDenominator = ZERO;
+                double maximumWeightedDenominator = ZERO;
                 double rescueThreshold = ZERO;
                 kNew = 0;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
@@ -681,7 +680,7 @@ public class BOBYQAOptimizer
                     final int ksav = kNew;
                     final double densav = denominator;
                     final double delsq = delta * delta;
-                    maximumWeightedDenominator = ZERO;
+                    double maximumWeightedDenominator = ZERO;
                     biglsq = ZERO;
                     kNew = 0;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
