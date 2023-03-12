@@ -17,14 +17,12 @@
 // CHECKSTYLE: stop all
 package org.apache.commons.math4.legacy.optim.nonlinear.scalar.noderiv;
 
-import java.util.Arrays;
 import org.apache.commons.math4.legacy.exception.MathIllegalStateException;
 import org.apache.commons.math4.legacy.exception.NumberIsTooSmallException;
 import org.apache.commons.math4.legacy.exception.OutOfRangeException;
 import org.apache.commons.math4.legacy.exception.util.LocalizedFormats;
 import org.apache.commons.math4.legacy.linear.Array2DRowRealMatrix;
 import org.apache.commons.math4.legacy.linear.ArrayRealVector;
-import org.apache.commons.math4.legacy.linear.RealMatrix;
 import org.apache.commons.math4.legacy.linear.RealVector;
 import org.apache.commons.math4.legacy.optim.PointValuePair;
 import org.apache.commons.math4.legacy.optim.nonlinear.scalar.GoalType;
@@ -351,10 +349,10 @@ public class BOBYQAOptimizer
         double f = ZERO;
         double beta = ZERO;
         double adelt = ZERO;
-        double denom = ZERO;
+        double denominator = ZERO;
         double ratio = ZERO;
         double dnorm = ZERO;
-        double scaden = ZERO;
+        double maximumWeightedDenominator = ZERO;
         double biglsq = ZERO;
         double distsq = ZERO;
 
@@ -581,8 +579,8 @@ public class BOBYQAOptimizer
             // rounding errors have damaged the chosen denominator.
 
             if (ntrits == 0) {
-                denom = power2(startOfHw.getEntry(kNew)) + alpha * beta;
-                if (denom < cauchy && cauchy > ZERO) {
+                denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
+                if (denominator < cauchy && cauchy > ZERO) {
                     for (int i = 0; i < dimension; i++) {
                         newPoint.setEntry(i, alternativeNewPoint.getEntry(i));
                         trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
@@ -590,33 +588,35 @@ public class BOBYQAOptimizer
                     cauchy = ZERO; // XXX Useful statement?
                     state = 230; break goto_switch;
                 }
+            } else {
                 // Alternatively, if NTRITS is positive, then set KNEW to the index of
                 // the next interpolation point to be deleted to make room for a trust
-                // region step. Again RESCUE may be called if rounding errors have damaged_
-                // the chosen denominator, which is the reason for attempting to select
-                // KNEW before calculating the next value of the objective function.
-            } else {
-                final double delsq = delta * delta;
-                scaden = ZERO;
-                biglsq = ZERO;
+                // region step.
+                final double deltaSquared = delta * delta;
+                maximumWeightedDenominator = ZERO;
+                double rescueThreshold = ZERO;
                 kNew = 0;
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     if (k == trustRegionCenterInterpolationPointIndex) {
                         continue;
                     }
+                    // apply (6.1)
                     final double hdiag = zMatrix.getRowVectorRef(k).dotProduct(zMatrix.getRowVectorRef(k));
-                    final double den = beta * hdiag + power2(startOfHw.getEntry(k));
-                    final RealVector tmp = interpolationPoints.getRowVectorRef(k).subtract(trustRegionCenterOffset);
-                    distsq = tmp.dotProduct(tmp);
-
-                    final double temp = JdkMath.max(ONE, power2(distsq / delsq));
-                    if (temp * den > scaden) {
-                        scaden = temp * den;
+                    final double sigma = beta * hdiag + power2(startOfHw.getEntry(k));
+                    double distanceSquared = l2Squared(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
+                    final double weightedDenominator = JdkMath.max(ONE,distanceSquared / deltaSquared) * sigma;
+                    if (weightedDenominator > maximumWeightedDenominator) {
+                        maximumWeightedDenominator = weightedDenominator;
                         kNew = k;
-                        denom = den;
+                        denominator = sigma;
                     }
-                    // biglsq can be used for the rescue protocol - not implemented
-                    biglsq = JdkMath.max(biglsq, temp * power2(startOfHw.getEntry(k)));
+
+                    // RESCUE may be called if rounding errors have damaged_
+                    // the chosen denominator, which is the reason for attempting to select
+                    // KNEW before calculating the next value of the objective function.
+                    // biglsq is used to determine of RESCUE should be run
+                    // RESCUE is not implemented - dead code
+                    rescueThreshold = JdkMath.max(rescueThreshold, JdkMath.max(ONE,distanceSquared / deltaSquared) * power2(startOfHw.getEntry(k)));
                 }
             }
 
@@ -682,9 +682,9 @@ public class BOBYQAOptimizer
 
                 if (f < fopt) {
                     final int ksav = kNew;
-                    final double densav = denom;
+                    final double densav = denominator;
                     final double delsq = delta * delta;
-                    scaden = ZERO;
+                    maximumWeightedDenominator = ZERO;
                     biglsq = ZERO;
                     kNew = 0;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
@@ -699,25 +699,25 @@ public class BOBYQAOptimizer
                         }
                         // Computing MAX
                         final double temp = JdkMath.max(ONE, power2(distsq / delsq));
-                        if (temp * den > scaden) {
-                            scaden = temp * den;
+                        if (temp * den > maximumWeightedDenominator) {
+                            maximumWeightedDenominator = temp * den;
                             kNew = k;
-                            denom = den;
+                            denominator = den;
                         }
                         // Computing MAX
                         final double d5 = temp * power2(startOfHw.getEntry(k));
                         biglsq = JdkMath.max(biglsq, d5);
                     }
-                    if (scaden <= HALF * biglsq) {
+                    if (maximumWeightedDenominator <= HALF * biglsq) {
                         kNew = ksav;
-                        denom = densav;
+                        denominator = densav;
                     }
                 }
             }
 
             // Update BMAT and ZMAT, so that the KNEW-th interpolation point can be
             // moved. Also update the second derivative terms of the model.
-            update(beta, denom, kNew, startOfHw, tailOfHw);
+            update(beta, denominator, kNew, startOfHw, tailOfHw);
 
             ih = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
@@ -2122,6 +2122,13 @@ public class BOBYQAOptimizer
     private double power2(final double val) {
         // will replace by JdkMath only at the end of the refactoring because this may impact floating point errors
         return val * val;
+    }
+
+    // Vector and Matrix utils - should be in interface IMO
+    private double l2Squared(RealVector a, RealVector b) {
+        // bad performance - to optimize later
+        final RealVector tmp = a.subtract(b);
+        return tmp.dotProduct(tmp);
     }
 }
 //CHECKSTYLE: resume all

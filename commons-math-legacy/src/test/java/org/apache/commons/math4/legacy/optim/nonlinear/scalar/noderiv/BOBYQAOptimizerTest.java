@@ -87,7 +87,7 @@ public class BOBYQAOptimizerTest {
         PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 3000, expected, 2840, 2840);
+                1e-13, 1e-6, 3000, expected, 2344, 2840);
      }
 
     @Test
@@ -101,7 +101,7 @@ public class BOBYQAOptimizerTest {
         PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
             GoalType.MINIMIZE,
-            1e-13, 1e-6, 3000, expected, 1668, 1727);
+            1e-13, 1e-6, 3000, expected, 1604, 1727);
     }
 
     @Test
@@ -205,7 +205,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(dim, 0.0), 0.0);
         doTest(TestFunction.SUM_POW.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-8, 1e-1, 20000, expected, 10155, 11785);
+                1e-8, 1e-1, 12000, expected, 5360, 11785);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.ACKLEY.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-7, 1e-5, 1000, expected, 446, 451);
+                1e-7, 1e-5, 1000, expected, 446, 481);
     }
 
     @Test
@@ -228,7 +228,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.RASTRIGIN.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 1000, expected, 173, 177);
+                1e-13, 1e-6, 1000, expected, 173, 299);
     }
 
     @Test
@@ -241,7 +241,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 3100, expected, 2468, 2468);
+                1e-13, 1e-6, 3100, expected, 2468, 2700);
     }
 
     // See MATH-728
