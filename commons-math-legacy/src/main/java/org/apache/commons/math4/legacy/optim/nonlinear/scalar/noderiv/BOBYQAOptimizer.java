@@ -653,10 +653,7 @@ public class BOBYQAOptimizer
                     ih++;
                }
             }
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                // note: the power2 must have priority to prevent test failures.
-                vquad += HALF * modelSecondDerivativesParameters.getEntry(k) * power2(work2.getEntry(k));
-            }
+            vquad += HALF * modelSecondDerivativesParameters.dotProduct(work2.ebeMultiply(work2));
             final double diff = f - fopt - vquad;
             diffc = diffb;
             diffb = diffa;
