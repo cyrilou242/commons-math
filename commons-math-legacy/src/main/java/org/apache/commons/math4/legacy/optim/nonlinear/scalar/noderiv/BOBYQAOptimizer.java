@@ -549,9 +549,9 @@ public class BOBYQAOptimizer
             // Calculate Hw components and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
+            // see (4.9) to (4.11)
             final RealVector work2 = interpolationPoints.operate(trialStepPoint);
             final RealVector workb = interpolationPoints.operate(trustRegionCenterOffset);
-            // TODO CYRIL can be optimized by implementing more toSelf operations addToSelf and ebeToSelf
             final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
             final RealVector work4 = zMatrix.preMultiply(work3);
 
@@ -567,18 +567,17 @@ public class BOBYQAOptimizer
                 );
             final double bsum =  work6.add(tailOfHw).dotProduct(trialStepPoint);
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
-            dsq = trialStepPoint.getSquaredNorm();
+            final double stepL2Squared = trialStepPoint.getSquaredNorm();
 
-            beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - work4.dotProduct(work4) - bsum; // Original
+            beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
 
             startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
                 startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
-            // If NTRITS is zero, the denominator may be increased by replacing
-            // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
-            // rounding errors have damaged the chosen denominator.
-
             if (ntrits == 0) {
+                // If NTRITS is zero, the denominator may be increased by replacing
+                // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
+                // rounding errors have damaged the chosen denominator.
                 denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
                 if (denominator < cauchy && cauchy > ZERO) {
                     for (int i = 0; i < dimension; i++) {
