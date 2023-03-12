@@ -580,10 +580,8 @@ public class BOBYQAOptimizer
                 // rounding errors have damaged the chosen denominator.
                 denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
                 if (denominator < cauchy && cauchy > ZERO) {
-                    for (int i = 0; i < dimension; i++) {
-                        newPoint.setEntry(i, alternativeNewPoint.getEntry(i));
-                        trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-                    }
+                    setEntries(newPoint, alternativeNewPoint);
+                    setEntries(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
                     cauchy = ZERO; // XXX Useful statement?
                     state = 230; break goto_switch;
                 }
@@ -600,7 +598,7 @@ public class BOBYQAOptimizer
                         continue;
                     }
                     // apply (6.1)
-                    final double hdiag = zMatrix.getRowVectorRef(k).dotProduct(zMatrix.getRowVectorRef(k));
+                    final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));
                     final double sigma = beta * hdiag + power2(startOfHw.getEntry(k));
                     double distanceSquared = l2Squared(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
                     final double weightedDenominator = JdkMath.max(ONE,distanceSquared / deltaSquared) * sigma;
@@ -687,10 +685,7 @@ public class BOBYQAOptimizer
                     biglsq = ZERO;
                     kNew = 0;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        double hdiag = ZERO;
-                        for (int m = 0; m < nptm; m++) {
-                            hdiag += power2(zMatrix.getEntry(k, m));
-                        }
+                        final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));;
                         final double den = beta * hdiag + power2(startOfHw.getEntry(k));
                         distsq = ZERO;
                         for (int j = 0; j < dimension; j++) {
@@ -2124,10 +2119,20 @@ public class BOBYQAOptimizer
     }
 
     // Vector and Matrix utils - should be in interface IMO
-    private double l2Squared(RealVector a, RealVector b) {
+    private double l2Squared(final RealVector thiz, final RealVector b) {
         // bad performance - to optimize later
-        final RealVector tmp = a.subtract(b);
+        final RealVector tmp = thiz.subtract(b);
         return tmp.dotProduct(tmp);
+    }
+
+    private void setEntries(final RealVector thiz, final RealVector newValues) {
+        for (int i = 0; i< newValues.getDimension(); i++) {
+            thiz.setEntry(i, newValues.getEntry(i));
+        }
+    }
+
+    public double getSquaredNorm(final RealVector thiz) {
+        return thiz.dotProduct(thiz);
     }
 }
 //CHECKSTYLE: resume all
