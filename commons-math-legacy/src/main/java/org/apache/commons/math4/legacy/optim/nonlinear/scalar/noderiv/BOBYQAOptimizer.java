@@ -106,7 +106,10 @@ public class BOBYQAOptimizer
     /**
      * Last <em>n</em> columns of matrix H (where <em>n</em> is the dimension
      * of the problem).
-     * XXX "bmat" in the original code.
+     * The first m rows of bMatrix are ΞT without its first column,
+     * the last n rows of bMatrix are Υ without its first row and column,
+     * the submatrices ΞT and Υ being taken from expression (2.7)
+     * TODO CYRIL split in 2 matrices
      */
     private Array2DRowRealMatrix bMatrix;
     /**
@@ -554,20 +557,21 @@ public class BOBYQAOptimizer
             final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
             final RealVector work4 = zMatrix.preMultiply(work3);
 
-            final RealVector w1 = zMatrix.transpose().preMultiply(work4);
-            final RealVector startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(w1);
+            final RealVector work5 = zMatrix.transpose().preMultiply(work4);
+            final RealVector startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(work5);
 
-            final RealVector sumArray1 = bMatrix
+            final RealVector work6 = bMatrix
                 .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension - 1)
                 .preMultiply(work3);
-            final RealVector tailOfHw = sumArray1.add(
-                bMatrix.getSubMatrix(numberOfInterpolationPoints, numberOfInterpolationPoints+dimension-1, 0, dimension -1).operate(trialStepPoint));
-            final double bsum =  sumArray1.add(tailOfHw).dotProduct(trialStepPoint);
+            final RealVector tailOfHw = work6
+                .add(bMatrix
+                    .getSubMatrix(numberOfInterpolationPoints, numberOfInterpolationPoints+dimension-1, 0, dimension -1).operate(trialStepPoint)
+                );
+            final double bsum =  work6.add(tailOfHw).dotProduct(trialStepPoint);
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
             dsq = trialStepPoint.getSquaredNorm();
 
-            final double betaPart = - work4.dotProduct(work4);
-            beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) + betaPart - bsum; // Original
+            beta = dx * dx + dsq * (xoptsq + dx + dx + HALF * dsq) - work4.dotProduct(work4) - bsum; // Original
 
             startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
                 startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
