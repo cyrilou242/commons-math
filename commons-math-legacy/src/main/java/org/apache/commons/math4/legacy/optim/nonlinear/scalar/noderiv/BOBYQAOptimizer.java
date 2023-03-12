@@ -557,19 +557,11 @@ public class BOBYQAOptimizer
             final RealVector w1 = zMatrix.transpose().preMultiply(work4);
             final RealVector startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(w1);
 
-            final RealVector tailOfHw = new ArrayRealVector(dimension);
             final RealVector sumArray1 = bMatrix
                 .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension - 1)
                 .preMultiply(work3);
-
-            for (int j = 0; j < dimension; j++) {
-                double sum = sumArray1.getEntry(j);
-                final int jp = numberOfInterpolationPoints + j;
-                for (int i = 0; i < dimension; i++) {
-                    sum += bMatrix.getEntry(jp, i) * trialStepPoint.getEntry(i);
-                }
-                tailOfHw.setEntry(j, sum);
-            }
+            final RealVector tailOfHw = sumArray1.add(
+                bMatrix.getSubMatrix(numberOfInterpolationPoints, numberOfInterpolationPoints+dimension-1, 0, dimension -1).operate(trialStepPoint));
             final double bsum =  sumArray1.add(tailOfHw).dotProduct(trialStepPoint);
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
             dsq = trialStepPoint.getSquaredNorm();
