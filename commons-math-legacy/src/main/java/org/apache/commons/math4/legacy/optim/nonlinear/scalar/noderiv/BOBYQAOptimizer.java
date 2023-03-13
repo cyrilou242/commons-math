@@ -330,7 +330,7 @@ public class BOBYQAOptimizer
         setEntries(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
         double xoptsq =  trustRegionCenterOffset.getSquaredNorm();
         double fsave = fAtInterpolationPoints.getEntry(0);
-        int ntrits = 0;
+        int trustRegionIterations = 0;
         int itest = 0;
         int kNew = 0;
         int nfsav = getEvaluations();
@@ -363,7 +363,7 @@ public class BOBYQAOptimizer
 
             dnorm = JdkMath.min(delta, JdkMath.sqrt(dsq));
             if (dnorm < HALF * rho) {
-                ntrits = -1;
+                trustRegionIterations = -1;
                 distsq = power2(TEN * rho);
                 if (getEvaluations() <= nfsav + 2) {
                     state = 650; break goto_switch;
@@ -404,7 +404,7 @@ public class BOBYQAOptimizer
                 }
                 state = 680; break goto_switch;
             }
-            ++ntrits;
+            ++trustRegionIterations;
         }
         case 90: {
             // Severe cancellation is likely to occur if XOPT is too far from XBASE.
@@ -499,7 +499,7 @@ public class BOBYQAOptimizer
                 }
                 xoptsq = ZERO;
             }
-            if (ntrits == 0) {
+            if (trustRegionIterations == 0) {
                 state = 210; break goto_switch;
             }
             state = 230; break goto_switch;
@@ -564,7 +564,7 @@ public class BOBYQAOptimizer
                 startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
             double denominator = 0;
-            if (ntrits == 0) {
+            if (trustRegionIterations == 0) {
                 // If NTRITS is zero, the denominator may be increased by replacing
                 // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
                 // rounding errors have damaged the chosen denominator.
@@ -641,7 +641,7 @@ public class BOBYQAOptimizer
             }
 
             // Pick the next value of DELTA after a trust region step.
-            if (ntrits > 0) {
+            if (trustRegionIterations > 0) {
                 if (vquad >= ZERO) {
                     throw new MathIllegalStateException(LocalizedFormats.TRUST_REGION_STEP_FAILED, vquad);
                 }
@@ -769,7 +769,7 @@ public class BOBYQAOptimizer
             // the current data, the gradient of this interpolant at XOPT being put
             // into VLAG(numberOfInterpolationPoints+I), I=1,2,...,N.
 
-            if (ntrits > 0) {
+            if (trustRegionIterations > 0) {
                 final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
                 final ArrayRealVector work30 = new ArrayRealVector(numberOfInterpolationPoints);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
@@ -844,7 +844,7 @@ public class BOBYQAOptimizer
             // branch for another trust region calculation. The case NTRITS=0 occurs
             // when the new interpolation point was reached by an alternative step.
 
-            if (ntrits == 0) {
+            if (trustRegionIterations == 0) {
                 state = 60; break goto_switch;
             }
             if (f <= fopt + ONE_OVER_TEN * vquad) {
@@ -874,18 +874,18 @@ public class BOBYQAOptimizer
 
             if (kNew >= 0) {
                 final double dist = JdkMath.sqrt(distsq);
-                if (ntrits == -1) {
+                if (trustRegionIterations == -1) {
                     delta = JdkMath.min(ONE_OVER_TEN * delta, HALF * dist);
                     if (delta <= rho * 1.5) {
                         delta = rho;
                     }
                 }
-                ntrits = 0;
+                trustRegionIterations = 0;
                 adelt = clip(delta,rho, ONE_OVER_TEN * dist);
                 dsq = adelt * adelt;
                 state = 90; break goto_switch;
             }
-            if (ntrits == -1) {
+            if (trustRegionIterations == -1) {
                 state = 680; break goto_switch;
             }
             if (ratio > ZERO) {
@@ -911,7 +911,7 @@ public class BOBYQAOptimizer
                     rho = ONE_OVER_TEN * rho;
                 }
                 delta = JdkMath.max(delta, rho);
-                ntrits = 0;
+                trustRegionIterations = 0;
                 nfsav = getEvaluations();
                 state = 60; break goto_switch;
             } else {
@@ -924,7 +924,7 @@ public class BOBYQAOptimizer
         }}}
 
         // perform a Newton-Raphson step if the calculation was too short to have been tried before.
-        if (ntrits == -1) {
+        if (trustRegionIterations == -1) {
             setEntries(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
             f = computeF(currentBest);
             fsave = f;
