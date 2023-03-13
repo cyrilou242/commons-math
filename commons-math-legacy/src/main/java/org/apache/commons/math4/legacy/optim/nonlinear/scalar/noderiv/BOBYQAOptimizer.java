@@ -598,7 +598,7 @@ public class BOBYQAOptimizer
                     // apply (6.1)
                     final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));
                     final double sigma = beta * hdiag + power2(startOfHw.getEntry(k));
-                    double distanceSquared = l2Squared(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
+                    double distanceSquared = squaredL2Distance(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
                     final double weightedDenominator = JdkMath.max(ONE,distanceSquared / deltaSquared) * sigma;
                     if (weightedDenominator > maximumWeightedDenominator) {
                         maximumWeightedDenominator = weightedDenominator;
@@ -2117,7 +2117,7 @@ public class BOBYQAOptimizer
     }
 
     // Vector and Matrix utils - should be in interface IMO
-    private double l2Squared(final RealVector thiz, final RealVector b) {
+    private double squaredL2Distance(final RealVector thiz, final RealVector b) {
         // bad performance - to optimize later
         final RealVector tmp = thiz.subtract(b);
         return tmp.dotProduct(tmp);
