@@ -1265,6 +1265,7 @@ public class BOBYQAOptimizer
     // ----------------------------------------------------------------------------------------
 
     /**
+     *     Compute the trust region step.
      *     A version of the truncated conjugate gradient is applied. If a line
      *     search is restricted by a constraint, then the procedure is restarted,
      *     the values of the variables that are at their bounds being fixed. If
