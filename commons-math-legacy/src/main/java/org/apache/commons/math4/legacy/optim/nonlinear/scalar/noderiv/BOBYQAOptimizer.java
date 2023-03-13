@@ -327,16 +327,9 @@ public class BOBYQAOptimizer
         double alpha = Double.NaN;
         double dsq = Double.NaN;
 
-        // Parameter adjustments
-        double xoptsq = ZERO;
-        for (int i = 0; i < dimension; i++) {
-            trustRegionCenterOffset.setEntry(i, interpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex, i));
-            xoptsq += power2(trustRegionCenterOffset.getEntry(i));
-        }
+        setEntries(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
+        double xoptsq =  trustRegionCenterOffset.getSquaredNorm();
         double fsave = fAtInterpolationPoints.getEntry(0);
-
-        // Complete the settings that are required for the iterative procedure.
-
         int ntrits = 0;
         int itest = 0;
         int kNew = 0;
