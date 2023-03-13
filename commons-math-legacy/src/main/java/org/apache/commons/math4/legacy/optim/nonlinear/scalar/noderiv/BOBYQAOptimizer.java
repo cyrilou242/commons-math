@@ -349,7 +349,6 @@ public class BOBYQAOptimizer
         double f = ZERO;
         double beta = ZERO;
         double adelt = ZERO;
-        double denominator = ZERO;
         double ratio = ZERO;
         double dnorm = ZERO;
         double distsq = ZERO;
@@ -572,6 +571,7 @@ public class BOBYQAOptimizer
             startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
                 startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
+            double denominator = 0;
             if (ntrits == 0) {
                 // If NTRITS is zero, the denominator may be increased by replacing
                 // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
