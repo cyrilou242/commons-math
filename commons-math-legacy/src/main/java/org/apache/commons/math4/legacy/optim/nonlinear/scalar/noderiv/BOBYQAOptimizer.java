@@ -749,11 +749,8 @@ public class BOBYQAOptimizer
             // into VLAG(numberOfInterpolationPoints+I), I=1,2,...,N.
 
             if (trustRegionIterations > 0) {
-                final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
+                final RealVector work0 = fAtInterpolationPoints.mapSubtract(fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
                 final ArrayRealVector work30 = new ArrayRealVector(numberOfInterpolationPoints);
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    work0.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
-                }
                 for (int j = 0; j < nptm; j++) {
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
