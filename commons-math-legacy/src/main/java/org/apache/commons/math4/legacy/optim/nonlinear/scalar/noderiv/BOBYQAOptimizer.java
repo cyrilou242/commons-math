@@ -347,7 +347,6 @@ public class BOBYQAOptimizer
         double diffb = ZERO;
         double diffc = ZERO;
         double f = ZERO;
-        double beta = ZERO;
         double adelt = ZERO;
         double ratio = ZERO;
         double dnorm = ZERO;
@@ -566,7 +565,7 @@ public class BOBYQAOptimizer
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
             final double stepL2Squared = trialStepPoint.getSquaredNorm();
 
-            beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
+            final double beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
 
             startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
                 startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
