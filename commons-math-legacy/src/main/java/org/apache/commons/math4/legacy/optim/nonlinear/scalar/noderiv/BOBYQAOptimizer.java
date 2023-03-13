@@ -750,16 +750,7 @@ public class BOBYQAOptimizer
 
             if (trustRegionIterations > 0) {
                 final RealVector work0 = fAtInterpolationPoints.mapSubtract(fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
-                final ArrayRealVector work30 = new ArrayRealVector(numberOfInterpolationPoints);
-                for (int j = 0; j < nptm; j++) {
-                    double sum = ZERO;
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        sum += zMatrix.getEntry(k, j) * work0.getEntry(k);
-                    }
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        work30.setEntry(k, work30.getEntry(k) + sum * zMatrix.getEntry(k, j));
-                    }
-                }
+                final RealVector work30 = zMatrix.operate(zMatrix.transpose().operate(work0));
                 final ArrayRealVector oldWork3 = new ArrayRealVector(work30);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     double sum = ZERO;
