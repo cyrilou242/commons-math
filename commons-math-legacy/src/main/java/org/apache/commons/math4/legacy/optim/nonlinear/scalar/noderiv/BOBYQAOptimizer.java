@@ -1685,20 +1685,16 @@ public class BOBYQAOptimizer
             }
         }
         case 190: {
+            setEntries(newPoint, clipSelf(trustRegionCenterOffset.add(trialStepPoint), lowerDifference, upperDifference));
             for (int i = 0; i < dimension; i++) {
-                // Computing MAX
-                // Computing MIN
-                final double min = JdkMath.min(trustRegionCenterOffset.getEntry(i) + trialStepPoint.getEntry(i),
-                                            upperDifference.getEntry(i));
-                newPoint.setEntry(i, JdkMath.max(min, lowerDifference.getEntry(i)));
                 if (xbdi.getEntry(i) == MINUS_ONE) {
                     newPoint.setEntry(i, lowerDifference.getEntry(i));
                 }
                 if (xbdi.getEntry(i) == ONE) {
                     newPoint.setEntry(i, upperDifference.getEntry(i));
                 }
-                trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
             }
+            setEntries(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
             final double dsq = trialStepPoint.getSquaredNorm();
             return new double[] { dsq, crvmin };
             // The following instructions multiply the current S-vector by the second
@@ -2096,10 +2092,13 @@ public class BOBYQAOptimizer
 
     private static RealVector clipSelf(final RealVector thiz, final RealVector lowerBounds, final RealVector upperBounds) {
         for (int i = 0; i<thiz.getDimension(); i++) {
-            thiz.setEntry(i, JdkMath.min(upperBounds.getEntry(i),
-                                         JdkMath.max(lowerBounds.getEntry(i), thiz.getEntry(i))));
+            thiz.setEntry(i, clip(thiz.getEntry(i), lowerBounds.getEntry(i), upperBounds.getEntry(i)));
         }
         return thiz;
+    }
+
+    private static double clip(final double value, final double lowerBound, final double upperBound) {
+        return JdkMath.min(upperBound, JdkMath.max(lowerBound, value));
     }
 
     public static double getSquaredNorm(final RealVector thiz) {
