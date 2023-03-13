@@ -867,13 +867,10 @@ public class BOBYQAOptimizer
         case 650: {
             kNew = -1;
             for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                double sum = ZERO;
-                for (int j = 0; j < dimension; j++) {
-                    sum += power2(interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
-                }
-                if (sum > distsq) {
+                final double squaredL2Atk =  squaredL2Distance(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
+                if (squaredL2Atk > distsq) {
                     kNew = k;
-                    distsq = sum;
+                    distsq = squaredL2Atk;
                 }
             }
 
@@ -886,17 +883,13 @@ public class BOBYQAOptimizer
             if (kNew >= 0) {
                 final double dist = JdkMath.sqrt(distsq);
                 if (ntrits == -1) {
-                    // Computing MIN
                     delta = JdkMath.min(ONE_OVER_TEN * delta, HALF * dist);
                     if (delta <= rho * 1.5) {
                         delta = rho;
                     }
                 }
                 ntrits = 0;
-                // Computing MAX
-                // Computing MIN
-                final double d1 = JdkMath.min(ONE_OVER_TEN * dist, delta);
-                adelt = JdkMath.max(d1, rho);
+                adelt = clip(delta,rho, ONE_OVER_TEN * dist);
                 dsq = adelt * adelt;
                 state = 90; break goto_switch;
             }
@@ -1428,7 +1421,6 @@ public class BOBYQAOptimizer
             }
             double stplen = blen;
             if (shs > ZERO) {
-                // Computing MIN
                 stplen = JdkMath.min(blen, gredsq / shs);
             }
 
