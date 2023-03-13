@@ -753,7 +753,6 @@ public class BOBYQAOptimizer
                 final ArrayRealVector work30 = new ArrayRealVector(numberOfInterpolationPoints);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     work0.setEntry(k, fAtInterpolationPoints.getEntry(k) - fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
-                    work30.setEntry(k, ZERO);
                 }
                 for (int j = 0; j < nptm; j++) {
                     double sum = ZERO;
