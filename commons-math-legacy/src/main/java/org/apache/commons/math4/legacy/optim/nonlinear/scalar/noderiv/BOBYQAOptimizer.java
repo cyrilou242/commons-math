@@ -599,7 +599,8 @@ public class BOBYQAOptimizer
                     final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));
                     final double sigma = beta * hdiag + power2(startOfHw.getEntry(k));
                     double distanceSquared = squaredL2Distance(interpolationPoints.getRowVectorRef(k), trustRegionCenterOffset);
-                    final double weightedDenominator = JdkMath.max(ONE,distanceSquared / deltaSquared) * sigma;
+                    // NOTE: it is not clear in paper that a power2 is necessary here - but there is one in the implem, and it works better
+                    final double weightedDenominator = JdkMath.max(ONE,power2(distanceSquared / deltaSquared)) * sigma;
                     if (weightedDenominator > maximumWeightedDenominator) {
                         maximumWeightedDenominator = weightedDenominator;
                         kNew = k;
@@ -619,11 +620,7 @@ public class BOBYQAOptimizer
             //   in XNEW, with any adjustments for the bounds.
             // Calculate the value of the objective function at XBASE+XNEW, unless
             //   the limit on the number of calculations of F has been reached.
-            for (int i = 0; i < dimension; i++) {
-                final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
-                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
-                currentBest.setEntry(i, boundedNewBest);
-            }
+            setEntries(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
             f = computeF(currentBest);
 
             // Use the quadratic model to predict the change in F due to the step D,
@@ -652,7 +649,6 @@ public class BOBYQAOptimizer
             }
 
             // Pick the next value of DELTA after a trust region step.
-
             if (ntrits > 0) {
                 if (vquad >= ZERO) {
                     throw new MathIllegalStateException(LocalizedFormats.TRUST_REGION_STEP_FAILED, vquad);
@@ -660,13 +656,10 @@ public class BOBYQAOptimizer
                 ratio = (f - fopt) / vquad;
                 final double hDelta = HALF * delta;
                 if (ratio <= ONE_OVER_TEN) {
-                    // Computing MIN
                     delta = JdkMath.min(hDelta, dnorm);
                 } else if (ratio <= .7) {
-                    // Computing MAX
                     delta = JdkMath.max(hDelta, dnorm);
                 } else {
-                    // Computing MAX
                     delta = JdkMath.max(hDelta, 2 * dnorm);
                 }
                 if (delta <= rho * 1.5) {
@@ -685,12 +678,9 @@ public class BOBYQAOptimizer
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         final double hdiag = getSquaredNorm(zMatrix.getRowVectorRef(k));;
                         final double den = beta * hdiag + power2(startOfHw.getEntry(k));
-                        distsq = ZERO;
-                        for (int j = 0; j < dimension; j++) {
-                            distsq += power2(interpolationPoints.getEntry(k, j) - newPoint.getEntry(j));
-                        }
-                        // Computing MAX
-                        final double temp = JdkMath.max(ONE, power2(distsq / delsq));
+                        final double distanceSquared = squaredL2Distance(interpolationPoints.getRowVectorRef(k), newPoint);
+                        // NOTE: it is not clear in paper that a power2 is necessary here - but there is one in the implem, and it works better
+                        final double temp = JdkMath.max(ONE, power2(distanceSquared / delsq));
                         if (temp * den > maximumWeightedDenominator) {
                             maximumWeightedDenominator = temp * den;
                             kNew = k;
@@ -872,7 +862,6 @@ public class BOBYQAOptimizer
             // Alternatively, find out if the interpolation points are close enough
             //   to the best point so far.
 
-            // Computing MAX
             distsq = JdkMath.max(power2(TWO * delta), power2(TEN * rho));
         }
         case 650: {
@@ -951,21 +940,13 @@ public class BOBYQAOptimizer
 
         // perform a Newton-Raphson step if the calculation was too short to have been tried before.
         if (ntrits == -1) {
-            for (int i = 0; i < dimension; i++) {
-                final double newBest = originShift.getEntry(i) + newPoint.getEntry(i);
-                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
-                currentBest.setEntry(i, boundedNewBest);
-            }
+            setEntries(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
             f = computeF(currentBest);
             fsave = f;
         }
 
         if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
-            for (int i = 0; i < dimension; i++) {
-                final double newBest = originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i);
-                final double boundedNewBest = JdkMath.min(JdkMath.max(lowerBounds.getEntry(i), newBest), upperBounds.getEntry(i));
-                currentBest.setEntry(i, boundedNewBest);
-            }
+            setEntries(currentBest, clipSelf(originShift.add(trustRegionCenterOffset), lowerBounds, upperBounds));
             f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
         }
 
@@ -1164,12 +1145,8 @@ public class BOBYQAOptimizer
         }
 
         // Construct XNEW in a way that satisfies the bound constraints exactly.
-
-        for (int i = 0; i < dimension; i++) {
-            final double tmp = trustRegionCenterOffset.getEntry(i) + stpsav * (interpolationPoints.getEntry(ksav, i) - trustRegionCenterOffset.getEntry(i));
-            newPoint.setEntry(i, JdkMath.max(lowerDifference.getEntry(i),
-                                              JdkMath.min(upperDifference.getEntry(i), tmp)));
-        }
+        setEntries(newPoint, clipSelf(interpolationPoints.getRowVectorRef(ksav).subtract(trustRegionCenterOffset).mapMultiplyToSelf(stpsav).add(trustRegionCenterOffset),
+            lowerDifference, upperDifference));
         if (ibdsav < 0) {
             newPoint.setEntry(-ibdsav - 1, lowerDifference.getEntry(-ibdsav - 1));
         }
@@ -1264,11 +1241,7 @@ public class BOBYQAOptimizer
             if (curv > -gw &&
                 curv < -gw * (ONE + JdkMath.sqrt(TWO))) {
                 final double scale = -gw / curv;
-                for (int i = 0; i < dimension; i++) {
-                    final double tmp = trustRegionCenterOffset.getEntry(i) + scale * work1.getEntry(i);
-                    alternativeNewPoint.setEntry(i, JdkMath.max(lowerDifference.getEntry(i),
-                                                    JdkMath.min(upperDifference.getEntry(i), tmp)));
-                }
+                setEntries(alternativeNewPoint, clipSelf(work1.mapMultiply(scale).add(trustRegionCenterOffset),lowerDifference, upperDifference));
                 cauchy = power2(HALF * gw * scale);
             } else {
                 cauchy = power2(gw + HALF * curv);
@@ -1976,11 +1949,7 @@ public class BOBYQAOptimizer
 
         // evaluate F for each point
         for (int j = 1; j <= ruleBMax; j++) {
-            for (int k = 0; k < dimension; k++) {
-                currentBest.setEntry(k, JdkMath.min(JdkMath.max(lowerBounds.getEntry(k),
-                        originShift.getEntry(k) + interpolationPoints.getEntry(j, k)),
-                    upperBounds.getEntry(k)));
-            }
+            setEntries(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
             final double f = computeF(currentBest);
 
             fAtInterpolationPoints.setEntry(j, f);
@@ -2081,11 +2050,7 @@ public class BOBYQAOptimizer
             interpolationPoints.setEntry(j, jpt - 1, interpolationPoints.getEntry(jpt, jpt - 1));
 
             // Calculate the next value of F.
-            for (int i = 0; i < dimension; i++) {
-                currentBest.setEntry(i, JdkMath.min(JdkMath.max(lowerBounds.getEntry(i),
-                        originShift.getEntry(i) + interpolationPoints.getEntry(j, i)),
-                    upperBounds.getEntry(i)));
-            }
+            setEntries(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
             final double f = computeF(currentBest);
             fAtInterpolationPoints.setEntry(j, f);
             if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
@@ -2117,20 +2082,30 @@ public class BOBYQAOptimizer
     }
 
     // Vector and Matrix utils - should be in interface IMO
-    private double squaredL2Distance(final RealVector thiz, final RealVector b) {
+    private static double squaredL2Distance(final RealVector thiz, final RealVector b) {
         // bad performance - to optimize later
         final RealVector tmp = thiz.subtract(b);
         return tmp.dotProduct(tmp);
     }
 
-    private void setEntries(final RealVector thiz, final RealVector newValues) {
+    private static void setEntries(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
         }
     }
 
-    public double getSquaredNorm(final RealVector thiz) {
+    private static RealVector clipSelf(final RealVector thiz, final RealVector lowerBounds, final RealVector upperBounds) {
+        for (int i = 0; i<thiz.getDimension(); i++) {
+            thiz.setEntry(i, JdkMath.min(upperBounds.getEntry(i),
+                                         JdkMath.max(lowerBounds.getEntry(i), thiz.getEntry(i))));
+        }
+        return thiz;
+    }
+
+    public static double getSquaredNorm(final RealVector thiz) {
         return thiz.dotProduct(thiz);
     }
+
+    // todo add addSelf
 }
 //CHECKSTYLE: resume all
