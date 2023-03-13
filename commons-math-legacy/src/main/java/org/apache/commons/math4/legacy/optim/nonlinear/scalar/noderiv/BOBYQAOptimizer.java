@@ -23,6 +23,7 @@ import org.apache.commons.math4.legacy.exception.OutOfRangeException;
 import org.apache.commons.math4.legacy.exception.util.LocalizedFormats;
 import org.apache.commons.math4.legacy.linear.Array2DRowRealMatrix;
 import org.apache.commons.math4.legacy.linear.ArrayRealVector;
+import org.apache.commons.math4.legacy.linear.RealMatrix;
 import org.apache.commons.math4.legacy.linear.RealVector;
 import org.apache.commons.math4.legacy.optim.PointValuePair;
 import org.apache.commons.math4.legacy.optim.nonlinear.scalar.GoalType;
@@ -317,9 +318,8 @@ public class BOBYQAOptimizer
      */
     private PointValuePair bobyqb() {
         // Set some constants.
-        final int np = dimension + 1;
-        final int nptm = numberOfInterpolationPoints - np;
-        final int nh = dimension * np / 2;
+        final int nptm = numberOfInterpolationPoints - (dimension + 1);
+        final int nh = dimension * (dimension + 1) / 2;
 
         final ArrayRealVector work1 = new ArrayRealVector(dimension);
 
@@ -1734,8 +1734,7 @@ public class BOBYQAOptimizer
      *     of the product Hw in equation (4.11) of the Powell (2006) paper on
      *     NEWUOA. Further, BETA is set on entry to the value of the parameter
      *     with that name, and DENOM is set to the denominator of the updating
-     *     formula. Elements of ZMAT may be treated as zero if their moduli are
-     *     at most ZTEST. The first NDIM elements of W are used for working space.
+     *     formula. The first NDIM elements of W are used for working space.
      * @param beta
      * @param denom
      * @param kNew
@@ -1750,22 +1749,12 @@ public class BOBYQAOptimizer
             final RealVector tailOfHw
     ) {
 
-        final int nptm = numberOfInterpolationPoints - dimension - 1;
-
-        double ztest = ZERO;
-        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-            for (int j = 0; j < nptm; j++) {
-                // Computing MAX
-                ztest = JdkMath.max(ztest, JdkMath.abs(zMatrix.getEntry(k, j)));
-            }
-        }
-        ztest *= 1e-20;
-
+        // Elements of zMatrix that are <= zeroThreshold are replaced by zero. Important for numerical stability.
+        final double zeroThreshold = maxAbs(zMatrix) * 1e-20;
         // Apply the rotations that put zeros in the KNEW-th row of ZMAT.
-
-        for (int j = 1; j < nptm; j++) {
+        for (int j = 1; j < zMatrix.getColumnDimension(); j++) {
             final double d1 = zMatrix.getEntry(kNew, j);
-            if (JdkMath.abs(d1) > ztest) {
+            if (JdkMath.abs(d1) > zeroThreshold) {
                 final double d2 = power2(zMatrix.getEntry(kNew, 0));
                 final double d3 = power2(zMatrix.getEntry(kNew, j));
                 final double d4 = JdkMath.sqrt(d2 + d3);
@@ -1811,8 +1800,7 @@ public class BOBYQAOptimizer
             for (int i = 0; i <= jp; i++) {
                 if (i < numberOfInterpolationPoints) {
                     bMatrix.setEntry(i, j,
-                        bMatrix.getEntry(i, j) + d3 * startOfHw.getEntry(i) + d4 * work.getEntry(
-                            i));
+                        bMatrix.getEntry(i, j) + d3 * startOfHw.getEntry(i) + d4 * work.getEntry(i));
                 } else {
                     bMatrix.setEntry(i, j,
                         bMatrix.getEntry(i, j) + d3 * tailOfHw.getEntry(i - numberOfInterpolationPoints) + d4 * work.getEntry(
@@ -2088,6 +2076,17 @@ public class BOBYQAOptimizer
 
     public static double getSquaredNorm(final RealVector thiz) {
         return thiz.dotProduct(thiz);
+    }
+
+    // return the maximum absolute value in a matrix
+    private double maxAbs(final RealMatrix mat) {
+        double max = ZERO;
+        for (int k = 0; k < mat.getRowDimension(); k++) {
+            for (int j = 0; j < mat.getColumnDimension(); j++) {
+                max = JdkMath.max(max, JdkMath.abs(zMatrix.getEntry(k, j)));
+            }
+        }
+        return max;
     }
 
     // todo add addSelf
