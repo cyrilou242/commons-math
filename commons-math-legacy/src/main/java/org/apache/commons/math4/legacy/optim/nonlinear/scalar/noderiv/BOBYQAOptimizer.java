@@ -435,7 +435,7 @@ public class BOBYQAOptimizer
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
 
-                for (int m = 0; m < nptm; m++) {
+                for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
                     double sumz = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sumz += zMatrix.getEntry(k, m);
@@ -703,7 +703,7 @@ public class BOBYQAOptimizer
                     ih++;
                 }
             }
-            for (int m = 0; m < nptm; m++) {
+            for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
                 final double temp = diff * zMatrix.getEntry(kNew, m);
                 for (int k = 0; k < numberOfInterpolationPoints; k++) {
                     modelSecondDerivativesParameters.setEntry(k, modelSecondDerivativesParameters.getEntry(k) + temp * zMatrix.getEntry(k, m));
@@ -712,29 +712,13 @@ public class BOBYQAOptimizer
 
             // Include the new interpolation point, and make the changes to gradientAtTrustRegionCenter at
             // the old XOPT that are caused by the updating of the quadratic model.
-
             fAtInterpolationPoints.setEntry(kNew,  f);
-            for (int i = 0; i < dimension; i++) {
-                interpolationPoints.setEntry(kNew, i, newPoint.getEntry(i));
-                work1.setEntry(i, bMatrix.getEntry(kNew, i));
-            }
-            for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                double suma = ZERO;
-                for (int m = 0; m < nptm; m++) {
-                    suma += zMatrix.getEntry(kNew, m) * zMatrix.getEntry(k, m);
-                }
-                double sumb = ZERO;
-                for (int j = 0; j < dimension; j++) {
-                    sumb += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
-                }
-                final double temp = suma * sumb;
-                for (int i = 0; i < dimension; i++) {
-                    work1.setEntry(i, work1.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
-                }
-            }
-            for (int i = 0; i < dimension; i++) {
-                gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + diff * work1.getEntry(i));
-            }
+            setRow(interpolationPoints, kNew, newPoint);
+            setEntries(work1, bMatrix.getRowVectorRef(kNew));
+            final RealVector tmp1 = zMatrix.operate(zMatrix.getRowVectorRef(kNew));
+            final RealVector tmp2 = interpolationPoints.operate(trustRegionCenterOffset);
+            setEntries(work1, work1.add(interpolationPoints.preMultiply(tmp1.ebeMultiply(tmp2))));
+            setEntries(gradientAtTrustRegionCenter, gradientAtTrustRegionCenter.add(work1.mapMultiply(diff)));
 
             // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
 
@@ -2060,6 +2044,12 @@ public class BOBYQAOptimizer
     private static void setEntries(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
+        }
+    }
+
+    private static void setRow(final RealMatrix thiz, final int rowIndex, final RealVector newValues) {
+        for (int i = 0; i< newValues.getDimension(); i++) {
+            thiz.setEntry(rowIndex, i, newValues.getEntry(i));
         }
     }
 
