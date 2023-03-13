@@ -620,15 +620,15 @@ public class BOBYQAOptimizer
 
             final double fopt = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
             double vquad = trialStepPoint.dotProduct(gradientAtTrustRegionCenter);
-            int ih = 0;
+            int ih1 = 0;
             for (int j = 0; j < dimension; j++) {
                 for (int i = 0; i <= j; i++) {
                     double temp = trialStepPoint.getEntry(i) * trialStepPoint.getEntry(j);
                     if (i == j) {
                         temp *= HALF;
                     }
-                    vquad += modelSecondDerivativesValues.getEntry(ih) * temp;
-                    ih++;
+                    vquad += modelSecondDerivativesValues.getEntry(ih1) * temp;
+                    ih1++;
                }
             }
             vquad += HALF * modelSecondDerivativesParameters.dotProduct(work2.ebeMultiply(work2));
@@ -693,14 +693,14 @@ public class BOBYQAOptimizer
             // moved. Also update the second derivative terms of the model.
             update(beta, denominator, kNew, startOfHw, tailOfHw);
 
-            ih = 0;
+            int ih2 = 0;
             final double pqold = modelSecondDerivativesParameters.getEntry(kNew);
             modelSecondDerivativesParameters.setEntry(kNew, ZERO);
             for (int i = 0; i < dimension; i++) {
                 final double temp = pqold * interpolationPoints.getEntry(kNew, i);
                 for (int j = 0; j <= i; j++) {
-                    modelSecondDerivativesValues.setEntry(ih, modelSecondDerivativesValues.getEntry(ih) + temp * interpolationPoints.getEntry(kNew, j));
-                    ih++;
+                    modelSecondDerivativesValues.setEntry(ih2, modelSecondDerivativesValues.getEntry(ih2) + temp * interpolationPoints.getEntry(kNew, j));
+                    ih2++;
                 }
             }
             for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
@@ -725,7 +725,7 @@ public class BOBYQAOptimizer
             if (f < fopt) {
                 trustRegionCenterInterpolationPointIndex = kNew;
                 xoptsq = ZERO;
-                ih = 0;
+                int ih = 0;
                 for (int j = 0; j < dimension; j++) {
                     trustRegionCenterOffset.setEntry(j, newPoint.getEntry(j));
                     xoptsq += power2(trustRegionCenterOffset.getEntry(j));
