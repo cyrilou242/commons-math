@@ -703,12 +703,7 @@ public class BOBYQAOptimizer
                     ih2++;
                 }
             }
-            for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
-                final double temp = diff * zMatrix.getEntry(kNew, m);
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    modelSecondDerivativesParameters.setEntry(k, modelSecondDerivativesParameters.getEntry(k) + temp * zMatrix.getEntry(k, m));
-                }
-            }
+            addEntries(modelSecondDerivativesParameters, zMatrix.operate(zMatrix.getRowVectorRef(kNew).mapMultiply(diff)));
 
             // Include the new interpolation point, and make the changes to gradientAtTrustRegionCenter at
             // the old XOPT that are caused by the updating of the quadratic model.
@@ -717,8 +712,8 @@ public class BOBYQAOptimizer
             setEntries(work1, bMatrix.getRowVectorRef(kNew));
             final RealVector tmp1 = zMatrix.operate(zMatrix.getRowVectorRef(kNew));
             final RealVector tmp2 = interpolationPoints.operate(trustRegionCenterOffset);
-            setEntries(work1, work1.add(interpolationPoints.preMultiply(tmp1.ebeMultiply(tmp2))));
-            setEntries(gradientAtTrustRegionCenter, gradientAtTrustRegionCenter.add(work1.mapMultiply(diff)));
+            addEntries(work1, interpolationPoints.preMultiply(tmp1.ebeMultiply(tmp2)));
+            addEntries(gradientAtTrustRegionCenter, work1.mapMultiply(diff));
 
             // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
 
@@ -2044,6 +2039,13 @@ public class BOBYQAOptimizer
     private static void setEntries(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
+        }
+    }
+
+    // in place add
+    private static void addEntries(final RealVector thiz, final RealVector addValues) {
+        for (int i = 0; i< addValues.getDimension(); i++) {
+            thiz.setEntry(i, thiz.getEntry(i) + addValues.getEntry(i));
         }
     }
 
