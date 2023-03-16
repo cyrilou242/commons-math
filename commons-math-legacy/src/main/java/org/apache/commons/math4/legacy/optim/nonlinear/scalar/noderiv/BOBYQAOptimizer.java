@@ -476,6 +476,8 @@ public class BOBYQAOptimizer
                         work1.setEntry(j, work1.getEntry(j) + modelSecondDerivativesParameters.getEntry(k) * interpolationPoints.getEntry(k, j));
                         interpolationPoints.setEntry(k, j, interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
                     }
+                }
+                for (int j = 0; j < dimension; j++) {
                     for (int i = 0; i <= j; i++) {
                          modelSecondDerivativesValues.setEntry(ih,
                                     modelSecondDerivativesValues.getEntry(ih)
