@@ -469,11 +469,7 @@ public class BOBYQAOptimizer
                 int ih = 0;
                 setInPlace(work1, trustRegionCenterOffset.mapMultiply(-HALF * sumpq)
                     .add(interpolationPoints.preMultiply(modelSecondDerivativesParameters)));
-                for (int j = 0; j < dimension; j++) {
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        interpolationPoints.setEntry(k, j, interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
-                    }
-                }
+                subtractInPlace(interpolationPoints, trustRegionCenterOffset);
                 for (int j = 0; j < dimension; j++) {
                     for (int i = 0; i <= j; i++) {
                          modelSecondDerivativesValues.setEntry(ih,
@@ -2001,10 +1997,20 @@ public class BOBYQAOptimizer
         }
     }
 
-    private static void subtractInPlace(final RealVector thiz, final RealVector addValues) {
-        for (int i = 0; i < addValues.getDimension(); i++) {
-            thiz.setEntry(i, thiz.getEntry(i) - addValues.getEntry(i));
+    private static void subtractInPlace(final RealVector thiz, final RealVector subtractValues) {
+        for (int i = 0; i < subtractValues.getDimension(); i++) {
+            thiz.setEntry(i, thiz.getEntry(i) - subtractValues.getEntry(i));
         }
+    }
+
+
+    private static RealMatrix subtractInPlace(final RealMatrix thiz, final RealVector subtractValues) {
+        for (int i = 0; i < thiz.getColumnDimension(); i++) {
+            for (int k=0; k<thiz.getRowDimension(); k++) {
+                thiz.setEntry(k, i,thiz.getEntry(k, i) - subtractValues.getEntry(i));
+            }
+        }
+        return thiz;
     }
 
     private static void setRow(final RealMatrix thiz, final int rowIndex, final RealVector newValues) {
