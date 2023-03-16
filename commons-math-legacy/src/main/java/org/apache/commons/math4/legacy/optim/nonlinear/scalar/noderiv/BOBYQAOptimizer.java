@@ -318,7 +318,6 @@ public class BOBYQAOptimizer
      */
     private PointValuePair bobyqb() {
         // Set some constants.
-        final int nptm = numberOfInterpolationPoints - (dimension + 1);
         final int nh = dimension * (dimension + 1) / 2;
 
         final ArrayRealVector work1 = new ArrayRealVector(dimension);
@@ -786,6 +785,7 @@ public class BOBYQAOptimizer
                     itest = 0;
                 }
                 if (itest >= 3) {
+                    // perform replacement
                     for (int i = 0, max = JdkMath.max(numberOfInterpolationPoints, nh); i < max; i++) {
                         if (i < dimension) {
                             gradientAtTrustRegionCenter.setEntry(i, leastFrobeniusNormInterpolantGradient.getEntry(i));
@@ -796,19 +796,15 @@ public class BOBYQAOptimizer
                         if (i < nh) {
                             modelSecondDerivativesValues.setEntry(i, ZERO);
                         }
-                        itest = 0;
                     }
+                    itest = 0;
                 }
             }
 
             // If a trust region step has provided a sufficient decrease in F, then
             // branch for another trust region calculation. The case NTRITS=0 occurs
             // when the new interpolation point was reached by an alternative step.
-
-            if (trustRegionIterations == 0) {
-                state = 60; break goto_switch;
-            }
-            if (f <= fopt + ONE_OVER_TEN * vquad) {
+            if (f <= fopt + ONE_OVER_TEN * vquad || trustRegionIterations == 0) {
                 state = 60; break goto_switch;
             }
 
@@ -849,10 +845,7 @@ public class BOBYQAOptimizer
             if (trustRegionIterations == -1) {
                 state = 680; break goto_switch;
             }
-            if (ratio > ZERO) {
-                state = 60; break goto_switch;
-            }
-            if (JdkMath.max(delta, dnorm) > rho) {
+            if (ratio > ZERO || JdkMath.max(delta, dnorm) > rho) {
                 state = 60; break goto_switch;
             }
 
