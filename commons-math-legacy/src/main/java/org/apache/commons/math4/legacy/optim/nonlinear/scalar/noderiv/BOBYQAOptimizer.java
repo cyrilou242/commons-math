@@ -467,10 +467,10 @@ public class BOBYQAOptimizer
 
                 final double sumpq = modelSecondDerivativesParameters.getSum();
                 int ih = 0;
+                setInPlace(work1, trustRegionCenterOffset.mapMultiply(-HALF * sumpq)
+                    .add(interpolationPoints.preMultiply(modelSecondDerivativesParameters)));
                 for (int j = 0; j < dimension; j++) {
-                    work1.setEntry(j, -HALF * sumpq * trustRegionCenterOffset.getEntry(j));
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        work1.setEntry(j, work1.getEntry(j) + modelSecondDerivativesParameters.getEntry(k) * interpolationPoints.getEntry(k, j));
                         interpolationPoints.setEntry(k, j, interpolationPoints.getEntry(k, j) - trustRegionCenterOffset.getEntry(j));
                     }
                 }
@@ -1982,10 +1982,11 @@ public class BOBYQAOptimizer
         return tmp.dotProduct(tmp);
     }
 
-    private static void setInPlace(final RealVector thiz, final RealVector newValues) {
+    private static RealVector setInPlace(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
         }
+        return thiz;
     }
 
     private static void setZeroInPlace(final RealVector thiz) {
