@@ -756,21 +756,25 @@ public class BOBYQAOptimizer
                     .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension -1)
                     .preMultiply(work0)
                     .add(interpolationPoints.preMultiply(work22));
-                double gqsq = ZERO;
-                double gisq = ZERO;
+                double gqSquared = ZERO;
+                for (int i = 0; i < dimension; i++) {
+                    if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
+                        gqSquared += power2(JdkMath.min(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
+                    } else if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
+                        gqSquared += power2(JdkMath.max(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
+                    } else {
+                        gqSquared += power2(gradientAtTrustRegionCenter.getEntry(i));;
+                    }
+                }
+                double giSquared = ZERO;
                 for (int i = 0; i < dimension; i++) {
                     final double sum = leastFrobeniusNormInterpolantGradient.getEntry(i);
                     if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
-                        // Computing MIN
-                        gqsq += power2(JdkMath.min(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
-                        gisq += power2(JdkMath.min(ZERO, sum));
+                        giSquared += power2(JdkMath.min(ZERO, sum));
                     } else if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
-                        // Computing MAX
-                        gqsq += power2(JdkMath.max(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
-                        gisq += power2(JdkMath.max(ZERO, sum));
+                        giSquared += power2(JdkMath.max(ZERO, sum));
                     } else {
-                        gqsq += power2(gradientAtTrustRegionCenter.getEntry(i));;
-                        gisq += sum * sum;
+                        giSquared += sum * sum;
                     }
                 }
 
@@ -778,7 +782,7 @@ public class BOBYQAOptimizer
                 // norm interpolant, making the replacement if the test is satisfied.
 
                 ++itest;
-                if (gqsq < TEN * gisq) {
+                if (gqSquared < TEN * giSquared) {
                     itest = 0;
                 }
                 if (itest >= 3) {
