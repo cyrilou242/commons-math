@@ -511,59 +511,60 @@ public class BOBYQAOptimizer
                 cauchy = alphaCauchy[1];
                 setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
             }
-            state = 230; break goto_switch;
-
-            // XBASE is also moved to XOPT by a call of RESCUE. This calculation is
-            // more expensive than the previous shift, because new matrices BMAT and
-            // ZMAT are generated from scratch, which may include the replacement of
-            // interpolation points whose positions seem to be causing near linear
-            // dependence in the interpolation conditions. Therefore RESCUE is called
-            // only if rounding errors have reduced by at least a factor of two the
-            // denominator of the formula for updating the H matrix. It provides a
-            // useful safeguard, but is not invoked in most applications of BOBYQA.
-        }
-        case 230: {
             // Calculate Hw components and BETA for the current choice of D. The scalar
             // product of D with interpolationPoints(K,.) is going to be held in W(numberOfInterpolationPoints+K) for
             // use when VQUAD is calculated.
             // see (4.9) to (4.11)
-            final RealVector work2 = interpolationPoints.operate(trialStepPoint);
-            final RealVector workb = interpolationPoints.operate(trustRegionCenterOffset);
-            final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
-            final RealVector work4 = zMatrix.preMultiply(work3);
-
-            final RealVector work5 = zMatrix.transpose().preMultiply(work4);
-            final RealVector startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(work5);
-
-            final RealVector work6 = bMatrix
-                .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension - 1)
-                .preMultiply(work3);
-            final RealVector tailOfHw = work6
-                .add(bMatrix
-                    .getSubMatrix(numberOfInterpolationPoints, numberOfInterpolationPoints+dimension-1, 0, dimension -1).operate(trialStepPoint)
-                );
-            final double bsum =  work6.add(tailOfHw).dotProduct(trialStepPoint);
-            final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
-            final double stepL2Squared = getSquaredNorm(trialStepPoint);
-
-            final double beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
-
-            startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
-                startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
-
+            RealVector work2 = null;
+            double beta = 0;
+            RealVector startOfHw= null;
+            RealVector tailOfHw = null;
             double denominator = 0;
-            if (trustRegionIterations == 0) {
-                // If trustRegionIterations is zero, the denominator may be increased by replacing
-                // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
-                // rounding errors have damaged the chosen denominator.
-                denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
-                if (denominator < cauchy && cauchy > ZERO) {
-                    setInPlace(newPoint, alternativeNewPoint);
-                    setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
-                    cauchy = ZERO; // XXX Useful statement?
-                    state = 230; break goto_switch;
+            boolean denominatorOk = false;
+            while (!denominatorOk) {
+                work2 = interpolationPoints.operate(trialStepPoint);
+                final RealVector workb = interpolationPoints.operate(trustRegionCenterOffset);
+                final RealVector work3 = new ArrayRealVector(work2).mapMultiplyToSelf(HALF).add(workb).ebeMultiply(work2);
+                final RealVector work4 = zMatrix.preMultiply(work3);
+
+                final RealVector work5 = zMatrix.transpose().preMultiply(work4);
+                startOfHw = bMatrix.operate(trialStepPoint).getSubVector(0, numberOfInterpolationPoints).add(work5);
+
+                final RealVector work6 = bMatrix
+                    .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension - 1)
+                    .preMultiply(work3);
+                tailOfHw = work6
+                    .add(bMatrix
+                        .getSubMatrix(numberOfInterpolationPoints, numberOfInterpolationPoints+dimension-1, 0, dimension -1).operate(trialStepPoint)
+                    );
+                final double bsum =  work6.add(tailOfHw).dotProduct(trialStepPoint);
+                final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
+                final double stepL2Squared = getSquaredNorm(trialStepPoint);
+
+                beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
+
+                startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
+                    startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
+
+                if (trustRegionIterations != 0) {
+                    denominatorOk = true;
+                } else {
+                    // If trustRegionIterations is zero, the denominator may be increased by replacing
+                    // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
+                    // rounding errors have damaged the chosen denominator.
+                    denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
+                    if (denominator < cauchy && cauchy > ZERO) {
+                        setInPlace(newPoint, alternativeNewPoint);
+                        setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
+                        cauchy = ZERO; // XXX Useful statement?
+                        // perform loop
+                    } else {
+                        denominatorOk = true;
+                    }
                 }
-            } else {
+            }
+
+            if (trustRegionIterations != 0) {
                 // Alternatively, if trustRegionIterations is positive, then set KNEW to the index of
                 // the next interpolation point to be deleted to make room for a trust
                 // region step.
