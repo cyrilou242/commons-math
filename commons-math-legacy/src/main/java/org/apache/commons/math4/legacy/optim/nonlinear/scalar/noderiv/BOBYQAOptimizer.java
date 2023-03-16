@@ -413,21 +413,23 @@ public class BOBYQAOptimizer
                     final double sum = workVector.getEntry(k);
                     final double temp = fracsq - HALF * sum;
                     final ArrayRealVector work0 = new ArrayRealVector(dimension);
+                    final RealVector work1Bis = new ArrayRealVector(dimension);
                     for (int i = 0; i < dimension; i++) {
-                        work1.setEntry(i, bMatrix.getEntry(k, i));
+                        work1Bis.setEntry(i, bMatrix.getEntry(k, i));
                         work0.setEntry(i, sum * interpolationPoints.getEntry(k, i) + temp * trustRegionCenterOffset.getEntry(i));
                         final int ip = numberOfInterpolationPoints + i;
                         for (int j = 0; j <= i; j++) {
                             bMatrix.setEntry(ip, j,
                                           bMatrix.getEntry(ip, j)
-                                          + work1.getEntry(i) * work0.getEntry(j)
-                                          + work0.getEntry(i) * work1.getEntry(j));
+                                          + work1Bis.getEntry(i) * work0.getEntry(j)
+                                          + work0.getEntry(i) * work1Bis.getEntry(j));
                         }
                     }
                 }
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
 
+                // TODO CYRIL I AM HERE
                 for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
                     double sumz = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
@@ -439,12 +441,13 @@ public class BOBYQAOptimizer
                         work0.setEntry(k, workVector.getEntry(k) * zMatrix.getEntry(k, m));
                         sumw += work0.getEntry(k);
                     }
+                    final RealVector work1Bis = new ArrayRealVector(dimension);
                     for (int j = 0; j < dimension; j++) {
                         double sum = (fracsq * sumz - HALF * sumw) * trustRegionCenterOffset.getEntry(j);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             sum += work0.getEntry(k) * interpolationPoints.getEntry(k, j);
                         }
-                        work1.setEntry(j, sum);
+                        work1Bis.setEntry(j, sum);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             bMatrix.setEntry(k, j,
                                           bMatrix.getEntry(k, j)
@@ -453,11 +456,11 @@ public class BOBYQAOptimizer
                     }
                     for (int i = 0; i < dimension; i++) {
                         final int ip = i + numberOfInterpolationPoints;
-                        final double temp = work1.getEntry(i);
+                        final double temp = work1Bis.getEntry(i);
                         for (int j = 0; j <= i; j++) {
                             bMatrix.setEntry(ip, j,
                                           bMatrix.getEntry(ip, j)
-                                          + temp * work1.getEntry(j));
+                                          + temp * work1Bis.getEntry(j));
                         }
                     }
                 }
@@ -467,15 +470,15 @@ public class BOBYQAOptimizer
 
                 final double sumpq = modelSecondDerivativesParameters.getSum();
                 int ih = 0;
-                setInPlace(work1, trustRegionCenterOffset.mapMultiply(-HALF * sumpq)
-                    .add(interpolationPoints.preMultiply(modelSecondDerivativesParameters)));
+                final RealVector work1Quatro = trustRegionCenterOffset.mapMultiply(-HALF * sumpq)
+                    .add(interpolationPoints.preMultiply(modelSecondDerivativesParameters));
                 subtractInPlace(interpolationPoints, trustRegionCenterOffset);
                 for (int j = 0; j < dimension; j++) {
                     for (int i = 0; i <= j; i++) {
                          modelSecondDerivativesValues.setEntry(ih,
                                     modelSecondDerivativesValues.getEntry(ih)
-                                    + work1.getEntry(i) * trustRegionCenterOffset.getEntry(j)
-                                    + trustRegionCenterOffset.getEntry(i) * work1.getEntry(j));
+                                    + work1Quatro.getEntry(i) * trustRegionCenterOffset.getEntry(j)
+                                    + trustRegionCenterOffset.getEntry(i) * work1Quatro.getEntry(j));
                         bMatrix.setEntry(numberOfInterpolationPoints + i, j, bMatrix.getEntry(
                             numberOfInterpolationPoints + j, i));
                         ih++;
