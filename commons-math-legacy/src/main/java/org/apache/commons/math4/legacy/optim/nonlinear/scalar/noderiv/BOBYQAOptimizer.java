@@ -2046,11 +2046,11 @@ public class BOBYQAOptimizer
     }
 
     // return the maximum absolute value in a matrix
-    private double maxAbs(final RealMatrix mat) {
-        double max = ZERO;
+    private static double maxAbs(final RealMatrix mat) {
+        double max = 0;
         for (int k = 0; k < mat.getRowDimension(); k++) {
             for (int j = 0; j < mat.getColumnDimension(); j++) {
-                max = JdkMath.max(max, JdkMath.abs(zMatrix.getEntry(k, j)));
+                max = JdkMath.max(max, JdkMath.abs(mat.getEntry(k, j)));
             }
         }
         return max;
