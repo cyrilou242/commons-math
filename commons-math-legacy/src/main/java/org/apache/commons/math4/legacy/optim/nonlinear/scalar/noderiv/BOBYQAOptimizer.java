@@ -496,7 +496,20 @@ public class BOBYQAOptimizer
                 xoptsq = ZERO;
             }
             if (trustRegionIterations == 0) {
-                state = 210; break goto_switch;
+                // Pick two alternative vectors of variables, relative to XBASE, that
+                // are suitable as new positions of the KNEW-th interpolation point.
+                // Firstly, XNEW is set to the point on a line through XOPT and another
+                // interpolation point that minimizes the predicted value of the next
+                // denominator, subject to ||XNEW - XOPT|| .LEQ. ADELT and to the SL
+                // and SU bounds. Secondly, XALT is set to the best feasible point on
+                // a constrained version of the Cauchy step of the KNEW-th Lagrange
+                // function, the corresponding value of the square of this function
+                // being returned in CAUCHY. The choice between these alternatives is
+                // going to be made when the denominator is calculated.
+                final double[] alphaCauchy = altmov(kNew, adelt);
+                alpha = alphaCauchy[0];
+                cauchy = alphaCauchy[1];
+                setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
             }
             state = 230; break goto_switch;
 
@@ -508,23 +521,6 @@ public class BOBYQAOptimizer
             // only if rounding errors have reduced by at least a factor of two the
             // denominator of the formula for updating the H matrix. It provides a
             // useful safeguard, but is not invoked in most applications of BOBYQA.
-        }
-        case 210: {
-            // Pick two alternative vectors of variables, relative to XBASE, that
-            // are suitable as new positions of the KNEW-th interpolation point.
-            // Firstly, XNEW is set to the point on a line through XOPT and another
-            // interpolation point that minimizes the predicted value of the next
-            // denominator, subject to ||XNEW - XOPT|| .LEQ. ADELT and to the SL
-            // and SU bounds. Secondly, XALT is set to the best feasible point on
-            // a constrained version of the Cauchy step of the KNEW-th Lagrange
-            // function, the corresponding value of the square of this function
-            // being returned in CAUCHY. The choice between these alternatives is
-            // going to be made when the denominator is calculated.
-
-            final double[] alphaCauchy = altmov(kNew, adelt);
-            alpha = alphaCauchy[0];
-            cauchy = alphaCauchy[1];
-            setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
         }
         case 230: {
             // Calculate Hw components and BETA for the current choice of D. The scalar
