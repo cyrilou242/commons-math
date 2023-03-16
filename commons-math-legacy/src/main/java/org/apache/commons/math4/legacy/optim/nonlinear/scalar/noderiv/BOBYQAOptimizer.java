@@ -317,9 +317,6 @@ public class BOBYQAOptimizer
      * @return the value of the objective at the optimum.
      */
     private PointValuePair bobyqb() {
-        // Set some constants.
-        final int nh = dimension * (dimension + 1) / 2;
-
         final ArrayRealVector work1 = new ArrayRealVector(dimension);
 
         double cauchy = Double.NaN;
@@ -786,17 +783,9 @@ public class BOBYQAOptimizer
                 }
                 if (itest >= 3) {
                     // perform replacement
-                    for (int i = 0, max = JdkMath.max(numberOfInterpolationPoints, nh); i < max; i++) {
-                        if (i < dimension) {
-                            gradientAtTrustRegionCenter.setEntry(i, leastFrobeniusNormInterpolantGradient.getEntry(i));
-                        }
-                        if (i < numberOfInterpolationPoints) {
-                            modelSecondDerivativesParameters.setEntry(i, work11.getEntry(i));
-                        }
-                        if (i < nh) {
-                            modelSecondDerivativesValues.setEntry(i, ZERO);
-                        }
-                    }
+                    setEntries(gradientAtTrustRegionCenter, leastFrobeniusNormInterpolantGradient);
+                    setEntries(modelSecondDerivativesParameters, work11);
+                    setZeroes(modelSecondDerivativesValues);
                     itest = 0;
                 }
             }
@@ -2014,6 +2003,12 @@ public class BOBYQAOptimizer
     private static void setEntries(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
+        }
+    }
+
+    private static void setZeroes(final RealVector thiz) {
+        for (int i = 0; i< thiz.getDimension(); i++) {
+            thiz.setEntry(i, 0);
         }
     }
 
