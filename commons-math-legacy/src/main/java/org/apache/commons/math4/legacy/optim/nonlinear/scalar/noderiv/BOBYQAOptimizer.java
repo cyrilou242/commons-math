@@ -486,13 +486,11 @@ public class BOBYQAOptimizer
                         ih++;
                     }
                 }
-                for (int i = 0; i < dimension; i++) {
-                    originShift.setEntry(i, originShift.getEntry(i) + trustRegionCenterOffset.getEntry(i));
-                    newPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-                    lowerDifference.setEntry(i, lowerDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-                    upperDifference.setEntry(i, upperDifference.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-                    trustRegionCenterOffset.setEntry(i, ZERO);
-                }
+                addInPlace(originShift, trustRegionCenterOffset);
+                subtractInPlace(newPoint, trustRegionCenterOffset);
+                subtractInPlace(lowerDifference, trustRegionCenterOffset);
+                subtractInPlace(upperDifference, trustRegionCenterOffset);
+                setZeroInPlace(trustRegionCenterOffset);
                 xoptsq = ZERO;
             }
             if (trustRegionIterations == 0) {
@@ -2000,6 +1998,12 @@ public class BOBYQAOptimizer
     private static void addInPlace(final RealVector thiz, final RealVector addValues) {
         for (int i = 0; i< addValues.getDimension(); i++) {
             thiz.setEntry(i, thiz.getEntry(i) + addValues.getEntry(i));
+        }
+    }
+
+    private static void subtractInPlace(final RealVector thiz, final RealVector addValues) {
+        for (int i = 0; i < addValues.getDimension(); i++) {
+            thiz.setEntry(i, thiz.getEntry(i) - addValues.getEntry(i));
         }
     }
 
