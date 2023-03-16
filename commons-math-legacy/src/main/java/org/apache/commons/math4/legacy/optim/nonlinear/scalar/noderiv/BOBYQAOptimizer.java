@@ -349,10 +349,10 @@ public class BOBYQAOptimizer
         case 60: {
             // Generate the next point in the trust region that provides a small value
             // of the quadratic model subject to the constraints on the variables.
-            // The integer NTRITS is set to the number "trust region" iterations that
+            // The integer trustRegionIterations is set to the number "trust region" iterations that
             // have occurred since the last "alternative" iteration. If the length
             // of XNEW-XOPT is less than HALF*RHO, however, then there is a branch to
-            // label 650 or 680 with NTRITS=-1, instead of calculating F at XNEW.
+            // label 650 or 680 with trustRegionIterations=-1, instead of calculating F at XNEW.
             final double[] dsqCrvmin = trsbox(delta);
             dsq = dsqCrvmin[0];
             final double crvmin = dsqCrvmin[1];
@@ -553,7 +553,7 @@ public class BOBYQAOptimizer
 
             double denominator = 0;
             if (trustRegionIterations == 0) {
-                // If NTRITS is zero, the denominator may be increased by replacing
+                // If trustRegionIterations is zero, the denominator may be increased by replacing
                 // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
                 // rounding errors have damaged the chosen denominator.
                 denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
@@ -564,7 +564,7 @@ public class BOBYQAOptimizer
                     state = 230; break goto_switch;
                 }
             } else {
-                // Alternatively, if NTRITS is positive, then set KNEW to the index of
+                // Alternatively, if trustRegionIterations is positive, then set KNEW to the index of
                 // the next interpolation point to be deleted to make room for a trust
                 // region step.
                 final double deltaSquared = delta * delta;
@@ -763,7 +763,7 @@ public class BOBYQAOptimizer
             }
 
             // If a trust region step has provided a sufficient decrease in F, then
-            // branch for another trust region calculation. The case NTRITS=0 occurs
+            // branch for another trust region calculation. The case trustRegionIterations=0 occurs
             // when the new interpolation point was reached by an alternative step.
             if (f <= fopt + ONE_OVER_TEN * vquad || trustRegionIterations == 0) {
                 state = 60; break goto_switch;
