@@ -16,6 +16,7 @@
  */
 package org.apache.commons.math4.legacy.optim.nonlinear.scalar.noderiv;
 
+import java.util.Arrays;
 import org.apache.commons.math4.legacy.analysis.MultivariateFunction;
 import org.apache.commons.math4.legacy.exception.DimensionMismatchException;
 import org.apache.commons.math4.legacy.exception.NumberIsTooLargeException;
@@ -45,7 +46,7 @@ public class BOBYQAOptimizerTest {
         double[][] boundaries = boundaries(dim, -1, 2);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 2000, null);
+                1e-13, 1e-6, 2000, null, 0, 0);
     }
 
     @Test(expected=DimensionMismatchException.class)
@@ -55,7 +56,7 @@ public class BOBYQAOptimizerTest {
         double[][] boundaries = boundaries(dim + 1, -1, 2);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                GoalType.MINIMIZE,
-               1e-13, 1e-6, 2000, null);
+               1e-13, 1e-6, 2000, null, 0, 0);
     }
 
     @Test(expected=NumberIsTooSmallException.class)
@@ -64,7 +65,7 @@ public class BOBYQAOptimizerTest {
         double[] startPoint = OptimTestUtils.point(1, 0.5);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, null,
                GoalType.MINIMIZE,
-               1e-13, 1e-6, 2000, null);
+               1e-13, 1e-6, 2000, null, 0, 0);
     }
 
     @Test(expected=TooManyEvaluationsException.class)
@@ -75,7 +76,7 @@ public class BOBYQAOptimizerTest {
         double[][] boundaries = null;
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                GoalType.MINIMIZE,
-               1e-13, 1e-6, lowMaxEval, null);
+               1e-13, 1e-6, lowMaxEval, null, 0, 0);
      }
 
     @Test
@@ -86,8 +87,22 @@ public class BOBYQAOptimizerTest {
         PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 3000, expected);
+                1e-13, 1e-6, 3000, expected, 2344, 2857);
      }
+
+    @Test
+    public void testRosenSolutionAtTheBoundary() {
+        // test that goes in the codepath mentionnned in MATH-1137  - warning - at the time of this commit the codepath looked incorrect
+        final int dim = 12;
+        double[] startPoint = OptimTestUtils.point(dim, 0.1);
+        double[][] boundaries = new double[2][dim];
+        Arrays.fill(boundaries[0], -2);
+        Arrays.fill(boundaries[1], 1);
+        PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
+        doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
+            GoalType.MINIMIZE,
+            1e-13, 1e-6, 3000, expected, 1604, 1831);
+    }
 
     @Test
     public void testMaximize() {
@@ -96,12 +111,12 @@ public class BOBYQAOptimizerTest {
         PointValuePair expected = new PointValuePair(OptimTestUtils.point(DIM,0.0),1.0);
         doTest(TestFunction.MINUS_ELLI.withDimension(DIM), startPoint, boundaries,
                 GoalType.MAXIMIZE,
-                2e-10, 5e-6, 1000, expected);
+                2e-10, 5e-6, 1000, expected, 60, 64);
         boundaries = boundaries(DIM,-0.3,0.3);
         startPoint = OptimTestUtils.point(DIM,0.1);
         doTest(TestFunction.MINUS_ELLI.withDimension(DIM), startPoint, boundaries,
                 GoalType.MAXIMIZE,
-                2e-10, 5e-6, 1000, expected);
+                2e-10, 5e-6, 1000, expected, 56, 61);
     }
 
     @Test
@@ -112,7 +127,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.ELLI.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 1000, expected);
+                1e-13, 1e-6, 1000, expected, 61, 65);
      }
 
     @Test
@@ -123,7 +138,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(new OptimTestUtils.ElliRotated(), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-12, 1e-6, 10000, expected);
+                1e-12, 1e-6, 10000, expected, 5738, 8632);
     }
 
     @Test
@@ -134,7 +149,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.CIGAR.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 100, expected);
+                1e-13, 1e-6, 100, expected, 56, 56);
     }
 
     @Test
@@ -145,7 +160,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.TWO_AXES.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                2e-13, 1e-6, 100, expected);
+                2e-13, 1e-6, 100, expected, 57, 57);
      }
 
     @Test
@@ -156,7 +171,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.CIG_TAB.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 5e-5, 100, expected);
+                1e-13, 5e-5, 100, expected, 61, 61);
      }
 
     @Test
@@ -167,7 +182,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.CIG_TAB.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 100, expected);
+                1e-13, 1e-6, 100, expected, 61, 61);
     }
 
     @Test
@@ -178,7 +193,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.TABLET.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 100, expected);
+                1e-13, 1e-6, 100, expected, 56, 56);
     }
 
     @Test
@@ -190,7 +205,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(dim, 0.0), 0.0);
         doTest(TestFunction.SUM_POW.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-8, 1e-1, 21720, expected);
+                1e-8, 1e-1, 13000, expected, 5265, 11785);
     }
 
     @Test
@@ -201,7 +216,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.ACKLEY.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-7, 1e-5, 1000, expected);
+                1e-7, 1e-5, 1000, expected, 432, 481);
     }
 
     @Test
@@ -213,7 +228,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(DIM,0.0),0.0);
         doTest(TestFunction.RASTRIGIN.withDimension(DIM), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 1000, expected);
+                1e-13, 1e-6, 1000, expected, 172, 299);
     }
 
     @Test
@@ -226,7 +241,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
         doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-13, 1e-6, 3000, expected);
+                1e-13, 1e-6, 3000, expected, 2341, 2700);
     }
 
     // See MATH-728
@@ -252,8 +267,23 @@ public class BOBYQAOptimizerTest {
                    1e-12, 1e-6, 2000,
                    num,
                    expected,
-                   "num=" + num);
+                   // FIXME min/max evaluations are not known because this test is disabled
+                   "num=" + num, 0, 0);
         }
+    }
+
+    // TODO see above - simple test to keep the additionalInterpolationPoint code path case tested
+    //  can be removed once above test is added back
+    //  the number of evaluations is very unstable
+    @Test
+    public void testRosenWithAdditionalInterpolationPoints() {
+        final int dim = 12;
+        double[] startPoint = OptimTestUtils.point(dim, 0.1);
+        double[][] boundaries = null;
+        PointValuePair expected = new PointValuePair(OptimTestUtils.point(dim, 1.0), 0.0);
+        doTest(TestFunction.ROSENBROCK.withDimension(dim), startPoint, boundaries,
+            GoalType.MINIMIZE,
+            1e-13, 1e-6, 3000,  10, expected, "", 1843, 2013);
     }
 
     /**
@@ -273,7 +303,9 @@ public class BOBYQAOptimizerTest {
                         double fTol,
                         double pointTol,
                         int maxEvaluations,
-                        PointValuePair expected) {
+                        PointValuePair expected,
+                        final int minExpectedEvaluations,
+                        final int maxExpectedEvaluations) {
         doTest(func,
                startPoint,
                boundaries,
@@ -283,7 +315,9 @@ public class BOBYQAOptimizerTest {
                maxEvaluations,
                0,
                expected,
-               "");
+               "",
+               minExpectedEvaluations,
+               maxExpectedEvaluations);
     }
 
     /**
@@ -307,7 +341,9 @@ public class BOBYQAOptimizerTest {
                         int maxEvaluations,
                         int additionalInterpolationPoints,
                         PointValuePair expected,
-                        String assertMsg) {
+                        String assertMsg,
+                        final int minExpectedEvaluations,
+                        final int maxExpectedEvaluations) {
 
 //         System.out.println(func.getClass().getName() + " BEGIN"); // XXX
 
@@ -335,6 +371,9 @@ public class BOBYQAOptimizerTest {
             Assert.assertEquals(expected.getPoint()[i],
                                 result.getPoint()[i], pointTol);
         }
+        System.out.println(optim.getEvaluations());
+        Assert.assertTrue(optim.getEvaluations() >= minExpectedEvaluations);
+        Assert.assertTrue(optim.getEvaluations() <= maxExpectedEvaluations);
 
 //         System.out.println(func.getClass().getName() + " END"); // XXX
     }

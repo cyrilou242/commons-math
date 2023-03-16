@@ -42,7 +42,7 @@ public class Array2DRowRealMatrix extends AbstractRealMatrix implements Serializ
     public Array2DRowRealMatrix() {}
 
     /**
-     * Create a new RealMatrix with the supplied row and column dimensions.
+     * Create a new RealMatrix of zeroes with the supplied row and column dimensions.
      *
      * @param rowDimension Number of rows in the new matrix.
      * @param columnDimension Number of columns in the new matrix.
@@ -247,6 +247,21 @@ public class Array2DRowRealMatrix extends AbstractRealMatrix implements Serializ
      */
     public double[][] getDataRef() {
         return data;
+    }
+
+    /**
+     * Get a vector that holds a reference to a row of the matrix.
+     *
+     * @return 2-dimensional array of entries.
+     */
+    public RealVector getRowVectorRef(final int row) {
+        try {
+            return new ArrayRealVector(data[row], false);
+        } catch (IndexOutOfBoundsException e) {
+            MatrixUtils.checkRowIndex(this, row);
+            throw e;
+        }
+
     }
 
     /** {@inheritDoc} */
