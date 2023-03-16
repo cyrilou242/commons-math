@@ -685,14 +685,12 @@ public class BOBYQAOptimizer
             addInPlace(gradientAtTrustRegionCenter, work1.mapMultiply(diff));
 
             // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
-
             if (f < fopt) {
                 trustRegionCenterInterpolationPointIndex = kNew;
-                xoptsq = ZERO;
+                setInPlace(trustRegionCenterOffset, newPoint);
+                xoptsq = getSquaredNorm(trustRegionCenterOffset);
                 int ih = 0;
                 for (int j = 0; j < dimension; j++) {
-                    trustRegionCenterOffset.setEntry(j, newPoint.getEntry(j));
-                    xoptsq += power2(trustRegionCenterOffset.getEntry(j));
                     for (int i = 0; i <= j; i++) {
                         if (i < j) {
                             gradientAtTrustRegionCenter.setEntry(j, gradientAtTrustRegionCenter.getEntry(j) + modelSecondDerivativesValues.getEntry(ih) * trialStepPoint.getEntry(i));
@@ -2041,7 +2039,5 @@ public class BOBYQAOptimizer
         }
         return max;
     }
-
-    // todo add addSelf
 }
 //CHECKSTYLE: resume all

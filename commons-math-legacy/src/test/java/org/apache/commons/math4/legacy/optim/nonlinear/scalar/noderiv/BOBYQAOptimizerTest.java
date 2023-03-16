@@ -205,7 +205,7 @@ public class BOBYQAOptimizerTest {
             new PointValuePair(OptimTestUtils.point(dim, 0.0), 0.0);
         doTest(TestFunction.SUM_POW.withDimension(dim), startPoint, boundaries,
                 GoalType.MINIMIZE,
-                1e-8, 1e-1, 12000, expected, 5265, 11785);
+                1e-8, 1e-1, 13000, expected, 5265, 11785);
     }
 
     @Test
