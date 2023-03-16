@@ -555,13 +555,10 @@ public class BOBYQAOptimizer
                         setInPlace(newPoint, alternativeNewPoint);
                         setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
                         cauchy = ZERO;
-                        // perform loop
-                    } else {
-                        denominatorOk = true;
+                        continue;
                     }
-                } else {
-                    denominatorOk = true;
                 }
+                denominatorOk = true;
             }
 
             if (trustRegionIterations != 0) {
