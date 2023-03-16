@@ -323,7 +323,7 @@ public class BOBYQAOptimizer
         double alpha = Double.NaN;
         double dsq = Double.NaN;
 
-        setEntries(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
+        setInPlace(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
         double xoptsq =  getSquaredNorm(trustRegionCenterOffset);
         double fsave = fAtInterpolationPoints.getEntry(0);
         int trustRegionIterations = 0;
@@ -524,11 +524,7 @@ public class BOBYQAOptimizer
             final double[] alphaCauchy = altmov(kNew, adelt);
             alpha = alphaCauchy[0];
             cauchy = alphaCauchy[1];
-
-            for (int i = 0; i < dimension; i++) {
-                trialStepPoint.setEntry(i, newPoint.getEntry(i) - trustRegionCenterOffset.getEntry(i));
-            }
-
+            setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
         }
         case 230: {
             // Calculate Hw components and BETA for the current choice of D. The scalar
@@ -566,8 +562,8 @@ public class BOBYQAOptimizer
                 // rounding errors have damaged the chosen denominator.
                 denominator = power2(startOfHw.getEntry(kNew)) + alpha * beta;
                 if (denominator < cauchy && cauchy > ZERO) {
-                    setEntries(newPoint, alternativeNewPoint);
-                    setEntries(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
+                    setInPlace(newPoint, alternativeNewPoint);
+                    setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
                     cauchy = ZERO; // XXX Useful statement?
                     state = 230; break goto_switch;
                 }
@@ -608,7 +604,7 @@ public class BOBYQAOptimizer
             //   in XNEW, with any adjustments for the bounds.
             // Calculate the value of the objective function at XBASE+XNEW, unless
             //   the limit on the number of calculations of F has been reached.
-            setEntries(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
+            setInPlace(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
             f = computeF(currentBest);
 
             // Use the quadratic model to predict the change in F due to the step D,
@@ -699,17 +695,17 @@ public class BOBYQAOptimizer
                     ih2++;
                 }
             }
-            addEntries(modelSecondDerivativesParameters, zMatrix.operate(zMatrix.getRowVectorRef(kNew).mapMultiply(diff)));
+            addInPlace(modelSecondDerivativesParameters, zMatrix.operate(zMatrix.getRowVectorRef(kNew).mapMultiply(diff)));
 
             // Include the new interpolation point, and make the changes to gradientAtTrustRegionCenter at
             // the old XOPT that are caused by the updating of the quadratic model.
             fAtInterpolationPoints.setEntry(kNew,  f);
             setRow(interpolationPoints, kNew, newPoint);
-            setEntries(work1, bMatrix.getRowVectorRef(kNew));
+            setInPlace(work1, bMatrix.getRowVectorRef(kNew));
             final RealVector tmp1 = zMatrix.operate(zMatrix.getRowVectorRef(kNew));
             final RealVector tmp2 = interpolationPoints.operate(trustRegionCenterOffset);
-            addEntries(work1, interpolationPoints.preMultiply(tmp1.ebeMultiply(tmp2)));
-            addEntries(gradientAtTrustRegionCenter, work1.mapMultiply(diff));
+            addInPlace(work1, interpolationPoints.preMultiply(tmp1.ebeMultiply(tmp2)));
+            addInPlace(gradientAtTrustRegionCenter, work1.mapMultiply(diff));
 
             // Update XOPT, gradientAtTrustRegionCenter and KOPT if the new calculated F is less than FOPT.
 
@@ -763,9 +759,9 @@ public class BOBYQAOptimizer
                 }
                 if (itest >= 3) {
                     // perform replacement
-                    setEntries(gradientAtTrustRegionCenter, leastFrobeniusNormInterpolantGradient);
-                    setEntries(modelSecondDerivativesParameters, work11);
-                    setZeroes(modelSecondDerivativesValues);
+                    setInPlace(gradientAtTrustRegionCenter, leastFrobeniusNormInterpolantGradient);
+                    setInPlace(modelSecondDerivativesParameters, work11);
+                    setZeroInPlace(modelSecondDerivativesValues);
                     itest = 0;
                 }
             }
@@ -848,13 +844,13 @@ public class BOBYQAOptimizer
 
         // perform a Newton-Raphson step if the calculation was too short to have been tried before.
         if (trustRegionIterations == -1) {
-            setEntries(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
+            setInPlace(currentBest, clipSelf(originShift.add(newPoint), lowerBounds, upperBounds));
             f = computeF(currentBest);
             fsave = f;
         }
 
         if (fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex) <= fsave) {
-            setEntries(currentBest, clipSelf(originShift.add(trustRegionCenterOffset), lowerBounds, upperBounds));
+            setInPlace(currentBest, clipSelf(originShift.add(trustRegionCenterOffset), lowerBounds, upperBounds));
             f = fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex);
         }
 
@@ -1065,7 +1061,7 @@ public class BOBYQAOptimizer
         }
 
         // Construct XNEW in a way that satisfies the bound constraints exactly.
-        setEntries(newPoint, clipSelf(interpolationPoints.getRowVectorRef(ksav).subtract(trustRegionCenterOffset).mapMultiplyToSelf(stpsav).add(trustRegionCenterOffset),
+        setInPlace(newPoint, clipSelf(interpolationPoints.getRowVectorRef(ksav).subtract(trustRegionCenterOffset).mapMultiplyToSelf(stpsav).add(trustRegionCenterOffset),
             lowerDifference, upperDifference));
         if (ibdsav < 0) {
             newPoint.setEntry(-ibdsav - 1, lowerDifference.getEntry(-ibdsav - 1));
@@ -1161,7 +1157,7 @@ public class BOBYQAOptimizer
             if (curv > -gw &&
                 curv < -gw * (ONE + JdkMath.sqrt(TWO))) {
                 final double scale = -gw / curv;
-                setEntries(alternativeNewPoint, clipSelf(work1.mapMultiply(scale).add(trustRegionCenterOffset),lowerDifference, upperDifference));
+                setInPlace(alternativeNewPoint, clipSelf(work1.mapMultiply(scale).add(trustRegionCenterOffset),lowerDifference, upperDifference));
                 cauchy = power2(HALF * gw * scale);
             } else {
                 cauchy = power2(gw + HALF * curv);
@@ -1605,7 +1601,7 @@ public class BOBYQAOptimizer
             }
         }
         case 190: {
-            setEntries(newPoint, clipSelf(trustRegionCenterOffset.add(trialStepPoint), lowerDifference, upperDifference));
+            setInPlace(newPoint, clipSelf(trustRegionCenterOffset.add(trialStepPoint), lowerDifference, upperDifference));
             for (int i = 0; i < dimension; i++) {
                 if (xbdi.getEntry(i) == MINUS_ONE) {
                     newPoint.setEntry(i, lowerDifference.getEntry(i));
@@ -1614,7 +1610,7 @@ public class BOBYQAOptimizer
                     newPoint.setEntry(i, upperDifference.getEntry(i));
                 }
             }
-            setEntries(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
+            setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
             final double dsq = getSquaredNorm(trialStepPoint);
             return new double[] { dsq, crvmin };
             // The following instructions multiply the current S-vector by the second
@@ -1853,7 +1849,7 @@ public class BOBYQAOptimizer
 
         // evaluate F for each point
         for (int j = 1; j <= ruleBMax; j++) {
-            setEntries(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
+            setInPlace(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
             final double f = computeF(currentBest);
 
             fAtInterpolationPoints.setEntry(j, f);
@@ -1954,7 +1950,7 @@ public class BOBYQAOptimizer
             interpolationPoints.setEntry(j, jpt - 1, interpolationPoints.getEntry(jpt, jpt - 1));
 
             // Calculate the next value of F.
-            setEntries(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
+            setInPlace(currentBest, clipSelf(originShift.add(interpolationPoints.getRowVectorRef(j)), lowerBounds, upperBounds));
             final double f = computeF(currentBest);
             fAtInterpolationPoints.setEntry(j, f);
             if (f < fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex)) {
@@ -1992,20 +1988,19 @@ public class BOBYQAOptimizer
         return tmp.dotProduct(tmp);
     }
 
-    private static void setEntries(final RealVector thiz, final RealVector newValues) {
+    private static void setInPlace(final RealVector thiz, final RealVector newValues) {
         for (int i = 0; i< newValues.getDimension(); i++) {
             thiz.setEntry(i, newValues.getEntry(i));
         }
     }
 
-    private static void setZeroes(final RealVector thiz) {
+    private static void setZeroInPlace(final RealVector thiz) {
         for (int i = 0; i< thiz.getDimension(); i++) {
             thiz.setEntry(i, 0);
         }
     }
 
-    // in place add
-    private static void addEntries(final RealVector thiz, final RealVector addValues) {
+    private static void addInPlace(final RealVector thiz, final RealVector addValues) {
         for (int i = 0; i< addValues.getDimension(); i++) {
             thiz.setEntry(i, thiz.getEntry(i) + addValues.getEntry(i));
         }
