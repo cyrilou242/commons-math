@@ -750,15 +750,8 @@ public class BOBYQAOptimizer
 
             if (trustRegionIterations > 0) {
                 final RealVector work0 = fAtInterpolationPoints.mapSubtract(fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
-                final RealVector work30 = zMatrix.operate(zMatrix.transpose().operate(work0));
-                final ArrayRealVector oldWork3 = new ArrayRealVector(work30);
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    double sum = ZERO;
-                    for (int j = 0; j < dimension; j++) {
-                        sum += interpolationPoints.getEntry(k, j) * trustRegionCenterOffset.getEntry(j);
-                    }
-                    work30.setEntry(k, sum * work30.getEntry(k));
-                }
+                final RealVector work11 = zMatrix.operate(zMatrix.transpose().operate(work0));
+                final RealVector work22 = work11.ebeMultiply(interpolationPoints.operate(trustRegionCenterOffset));
                 double gqsq = ZERO;
                 double gisq = ZERO;
                 final ArrayRealVector leastFrobeniusNormInterpolantGradient = new ArrayRealVector(dimension);
@@ -766,7 +759,7 @@ public class BOBYQAOptimizer
                     double sum = ZERO;
                     for (int k = 0; k < numberOfInterpolationPoints; k++) {
                         sum += bMatrix.getEntry(k, i) *
-                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work30.getEntry(k);
+                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work22.getEntry(k);
                     }
                     if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
                         // Computing MIN
@@ -796,7 +789,7 @@ public class BOBYQAOptimizer
                             gradientAtTrustRegionCenter.setEntry(i, leastFrobeniusNormInterpolantGradient.getEntry(i));
                         }
                         if (i < numberOfInterpolationPoints) {
-                            modelSecondDerivativesParameters.setEntry(i, oldWork3.getEntry(i));
+                            modelSecondDerivativesParameters.setEntry(i, work11.getEntry(i));
                         }
                         if (i < nh) {
                             modelSecondDerivativesValues.setEntry(i, ZERO);
