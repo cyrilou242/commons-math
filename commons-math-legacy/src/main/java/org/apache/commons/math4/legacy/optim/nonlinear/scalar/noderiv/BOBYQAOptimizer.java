@@ -752,15 +752,14 @@ public class BOBYQAOptimizer
                 final RealVector work0 = fAtInterpolationPoints.mapSubtract(fAtInterpolationPoints.getEntry(trustRegionCenterInterpolationPointIndex));
                 final RealVector work11 = zMatrix.operate(zMatrix.transpose().operate(work0));
                 final RealVector work22 = work11.ebeMultiply(interpolationPoints.operate(trustRegionCenterOffset));
+                final RealVector leastFrobeniusNormInterpolantGradient = bMatrix
+                    .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension -1)
+                    .preMultiply(work0)
+                    .add(interpolationPoints.preMultiply(work22));
                 double gqsq = ZERO;
                 double gisq = ZERO;
-                final ArrayRealVector leastFrobeniusNormInterpolantGradient = new ArrayRealVector(dimension);
                 for (int i = 0; i < dimension; i++) {
-                    double sum = ZERO;
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        sum += bMatrix.getEntry(k, i) *
-                            work0.getEntry(k) + interpolationPoints.getEntry(k, i) * work22.getEntry(k);
-                    }
+                    final double sum = leastFrobeniusNormInterpolantGradient.getEntry(i);
                     if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
                         // Computing MIN
                         gqsq += power2(JdkMath.min(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
@@ -773,7 +772,6 @@ public class BOBYQAOptimizer
                         gqsq += power2(gradientAtTrustRegionCenter.getEntry(i));;
                         gisq += sum * sum;
                     }
-                    leastFrobeniusNormInterpolantGradient.setEntry(i, sum);
                 }
 
                 // Test whether to replace the new quadratic model by the least Frobenius
