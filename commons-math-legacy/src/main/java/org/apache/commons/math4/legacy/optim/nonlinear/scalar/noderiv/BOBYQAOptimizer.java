@@ -752,31 +752,11 @@ public class BOBYQAOptimizer
                     .getSubMatrix(0, numberOfInterpolationPoints - 1, 0, dimension -1)
                     .preMultiply(work0)
                     .add(interpolationPoints.preMultiply(work22));
-                double gqSquared = ZERO;
-                for (int i = 0; i < dimension; i++) {
-                    if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
-                        gqSquared += power2(JdkMath.min(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
-                    } else if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
-                        gqSquared += power2(JdkMath.max(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
-                    } else {
-                        gqSquared += power2(gradientAtTrustRegionCenter.getEntry(i));;
-                    }
-                }
-                double giSquared = ZERO;
-                for (int i = 0; i < dimension; i++) {
-                    final double sum = leastFrobeniusNormInterpolantGradient.getEntry(i);
-                    if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
-                        giSquared += power2(JdkMath.min(ZERO, sum));
-                    } else if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
-                        giSquared += power2(JdkMath.max(ZERO, sum));
-                    } else {
-                        giSquared += sum * sum;
-                    }
-                }
+                final double gqSquared = getSquaredNorm(boundSafeGradient(gradientAtTrustRegionCenter));
+                final double giSquared = getSquaredNorm(boundSafeGradient(leastFrobeniusNormInterpolantGradient));
 
                 // Test whether to replace the new quadratic model by the least Frobenius
                 // norm interpolant, making the replacement if the test is satisfied.
-
                 ++itest;
                 if (gqSquared < TEN * giSquared) {
                     itest = 0;
@@ -881,6 +861,18 @@ public class BOBYQAOptimizer
         return new PointValuePair(currentBest.getDataRef(),
             (getGoalType().equals(GoalType.MINIMIZE)) ? f : -f);
     } // bobyqb
+
+    private RealVector boundSafeGradient(final RealVector gradient) {
+        final RealVector safeGradient = new ArrayRealVector(gradient);
+        for (int i = 0; i < gradient.getDimension(); i++) {
+            if (trustRegionCenterOffset.getEntry(i) == lowerDifference.getEntry(i)) {
+                safeGradient.setEntry(i, JdkMath.min(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
+            } else if (trustRegionCenterOffset.getEntry(i) == upperDifference.getEntry(i)) {
+                safeGradient.setEntry(i, JdkMath.max(ZERO, gradientAtTrustRegionCenter.getEntry(i)));
+            }
+        }
+        return safeGradient;
+    }
 
     private void initializeGradient() {
         // to use before the optimization loop
