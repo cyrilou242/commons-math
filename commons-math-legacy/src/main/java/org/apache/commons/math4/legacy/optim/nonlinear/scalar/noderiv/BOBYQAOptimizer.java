@@ -324,7 +324,7 @@ public class BOBYQAOptimizer
         double dsq = Double.NaN;
 
         setEntries(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
-        double xoptsq =  trustRegionCenterOffset.getSquaredNorm();
+        double xoptsq =  getSquaredNorm(trustRegionCenterOffset);
         double fsave = fAtInterpolationPoints.getEntry(0);
         int trustRegionIterations = 0;
         int itest = 0;
@@ -552,7 +552,7 @@ public class BOBYQAOptimizer
                 );
             final double bsum =  work6.add(tailOfHw).dotProduct(trialStepPoint);
             final double dx = trialStepPoint.dotProduct(trustRegionCenterOffset);
-            final double stepL2Squared = trialStepPoint.getSquaredNorm();
+            final double stepL2Squared = getSquaredNorm(trialStepPoint);
 
             final double beta = dx * dx + stepL2Squared * (xoptsq + dx + dx + HALF * stepL2Squared) - work4.dotProduct(work4) - bsum;
 
@@ -1615,7 +1615,7 @@ public class BOBYQAOptimizer
                 }
             }
             setEntries(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
-            final double dsq = trialStepPoint.getSquaredNorm();
+            final double dsq = getSquaredNorm(trialStepPoint);
             return new double[] { dsq, crvmin };
             // The following instructions multiply the current S-vector by the second
             // derivative matrix of the quadratic model, putting the product in HS.
