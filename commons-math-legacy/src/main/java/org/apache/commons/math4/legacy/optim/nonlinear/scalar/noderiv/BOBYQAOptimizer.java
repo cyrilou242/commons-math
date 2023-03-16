@@ -2004,6 +2004,7 @@ public class BOBYQAOptimizer
     }
 
 
+    // subtract the vector to each row
     private static RealMatrix subtractInPlace(final RealMatrix thiz, final RealVector subtractValues) {
         for (int i = 0; i < thiz.getColumnDimension(); i++) {
             for (int k=0; k<thiz.getRowDimension(); k++) {
