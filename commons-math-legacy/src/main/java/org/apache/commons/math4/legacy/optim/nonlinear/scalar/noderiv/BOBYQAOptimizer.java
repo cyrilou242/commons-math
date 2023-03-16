@@ -429,25 +429,15 @@ public class BOBYQAOptimizer
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
 
-                // TODO CYRIL I AM HERE
                 for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
-                    double sumz = ZERO;
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        sumz += zMatrix.getEntry(k, m);
-                    }
-                    double sumw = ZERO;
-                    final ArrayRealVector work0 = new ArrayRealVector(numberOfInterpolationPoints);
-                    for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                        work0.setEntry(k, workVector.getEntry(k) * zMatrix.getEntry(k, m));
-                        sumw += work0.getEntry(k);
-                    }
-                    final RealVector work1Bis = new ArrayRealVector(dimension);
+                    final double sumz = getSum(zMatrix.transpose().getRowVector(m));
+                    final RealVector work0 = zMatrix.transpose().getRowVector(m).ebeMultiply(workVector);
+                    final double sumw = getSum(work0);
+                    final RealVector work1Bis = trustRegionCenterOffset.mapMultiply(fracsq * sumz - HALF * sumw)
+                        .add(interpolationPoints.preMultiply(work0));
+
                     for (int j = 0; j < dimension; j++) {
-                        double sum = (fracsq * sumz - HALF * sumw) * trustRegionCenterOffset.getEntry(j);
-                        for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                            sum += work0.getEntry(k) * interpolationPoints.getEntry(k, j);
-                        }
-                        work1Bis.setEntry(j, sum);
+                        final double sum = work1Bis.getEntry(j);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
                             bMatrix.setEntry(k, j,
                                           bMatrix.getEntry(k, j)
