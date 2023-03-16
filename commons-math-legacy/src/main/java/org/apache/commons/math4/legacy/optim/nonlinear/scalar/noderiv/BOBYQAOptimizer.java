@@ -468,7 +468,7 @@ public class BOBYQAOptimizer
                 // The following instructions complete the shift, including the changes
                 // to the second derivative parameters of the quadratic model.
 
-                final double sumpq = modelSecondDerivativesParameters.getSum();
+                final double sumpq = getSum(modelSecondDerivativesParameters);
                 int ih = 0;
                 final RealVector work1Quatro = trustRegionCenterOffset.mapMultiply(-HALF * sumpq)
                     .add(interpolationPoints.preMultiply(modelSecondDerivativesParameters));
@@ -2036,6 +2036,15 @@ public class BOBYQAOptimizer
 
     public static double getSquaredNorm(final RealVector thiz) {
         return thiz.dotProduct(thiz);
+    }
+
+
+    public static double getSum(final RealVector thiz) {
+        double sum = 0;
+        for (int i = 0; i < thiz.getDimension(); i++) {
+            sum += thiz.getEntry(i);
+        }
+        return sum;
     }
 
     // return the maximum absolute value in a matrix

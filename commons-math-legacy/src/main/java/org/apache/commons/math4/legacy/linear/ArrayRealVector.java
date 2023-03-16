@@ -473,14 +473,6 @@ public class ArrayRealVector extends RealVector implements Serializable {
         return JdkMath.sqrt(sum);
     }
 
-    public double getSum() {
-        double sum = 0;
-        for (double a : data) {
-            sum += a;
-        }
-        return sum;
-    }
-
     /** {@inheritDoc} */
     @Override
     public double getL1Norm() {
