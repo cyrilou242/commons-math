@@ -318,9 +318,6 @@ public class BOBYQAOptimizer
      */
     private PointValuePair bobyqb() {
         final ArrayRealVector work1 = new ArrayRealVector(dimension);
-
-        double cauchy = Double.NaN;
-        double alpha = Double.NaN;
         double dsq = Double.NaN;
 
         setInPlace(trustRegionCenterOffset, interpolationPoints.getRowVectorRef(trustRegionCenterInterpolationPointIndex));
@@ -495,6 +492,9 @@ public class BOBYQAOptimizer
                 setZeroInPlace(trustRegionCenterOffset);
                 xoptsq = ZERO;
             }
+
+            double cauchy = Double.NaN;
+            double alpha = Double.NaN;
             if (trustRegionIterations == 0) {
                 // Pick two alternative vectors of variables, relative to XBASE, that
                 // are suitable as new positions of the KNEW-th interpolation point.
@@ -546,9 +546,7 @@ public class BOBYQAOptimizer
                 startOfHw.setEntry(trustRegionCenterInterpolationPointIndex,
                     startOfHw.getEntry(trustRegionCenterInterpolationPointIndex) + ONE);
 
-                if (trustRegionIterations != 0) {
-                    denominatorOk = true;
-                } else {
+                if (trustRegionIterations == 0) {
                     // If trustRegionIterations is zero, the denominator may be increased by replacing
                     // the step D of ALTMOV by a Cauchy step. Then RESCUE may be called if
                     // rounding errors have damaged the chosen denominator.
@@ -556,11 +554,13 @@ public class BOBYQAOptimizer
                     if (denominator < cauchy && cauchy > ZERO) {
                         setInPlace(newPoint, alternativeNewPoint);
                         setInPlace(trialStepPoint, newPoint.subtract(trustRegionCenterOffset));
-                        cauchy = ZERO; // XXX Useful statement?
+                        cauchy = ZERO;
                         // perform loop
                     } else {
                         denominatorOk = true;
                     }
+                } else {
+                    denominatorOk = true;
                 }
             }
 
