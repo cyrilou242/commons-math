@@ -428,29 +428,23 @@ public class BOBYQAOptimizer
                 }
 
                 // Then the revisions of BMAT that depend on ZMAT are calculated.
-
                 for (int m = 0; m < zMatrix.getColumnDimension(); m++) {
-                    final double sumz = getSum(zMatrix.transpose().getRowVector(m));
+                    final double sumZ = getSum(zMatrix.transpose().getRowVector(m));
                     final RealVector work0 = zMatrix.transpose().getRowVector(m).ebeMultiply(workVector);
-                    final double sumw = getSum(work0);
-                    final RealVector work1Bis = trustRegionCenterOffset.mapMultiply(fracsq * sumz - HALF * sumw)
+                    final double sumW = getSum(work0);
+                    final RealVector work1Bis = trustRegionCenterOffset.mapMultiply(fracsq * sumZ - HALF * sumW)
                         .add(interpolationPoints.preMultiply(work0));
-
                     for (int j = 0; j < dimension; j++) {
                         final double sum = work1Bis.getEntry(j);
                         for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                            bMatrix.setEntry(k, j,
-                                          bMatrix.getEntry(k, j)
-                                          + sum * zMatrix.getEntry(k, m));
+                            bMatrix.setEntry(k, j, bMatrix.getEntry(k, j) + sum * zMatrix.getEntry(k, m));
                         }
                     }
                     for (int i = 0; i < dimension; i++) {
                         final int ip = i + numberOfInterpolationPoints;
                         final double temp = work1Bis.getEntry(i);
                         for (int j = 0; j <= i; j++) {
-                            bMatrix.setEntry(ip, j,
-                                          bMatrix.getEntry(ip, j)
-                                          + temp * work1Bis.getEntry(j));
+                            bMatrix.setEntry(ip, j, bMatrix.getEntry(ip, j) + temp * work1Bis.getEntry(j));
                         }
                     }
                 }
@@ -707,16 +701,9 @@ public class BOBYQAOptimizer
                         ih++;
                     }
                 }
-                for (int k = 0; k < numberOfInterpolationPoints; k++) {
-                    double temp = ZERO;
-                    for (int j = 0; j < dimension; j++) {
-                        temp += interpolationPoints.getEntry(k, j) * trialStepPoint.getEntry(j);
-                    }
-                    temp *= modelSecondDerivativesParameters.getEntry(k);
-                    for (int i = 0; i < dimension; i++) {
-                        gradientAtTrustRegionCenter.setEntry(i, gradientAtTrustRegionCenter.getEntry(i) + temp * interpolationPoints.getEntry(k, i));
-                    }
-                }
+                final RealVector gradientUpdate = interpolationPoints.preMultiply(interpolationPoints.operate(trialStepPoint)
+                        .ebeMultiply(modelSecondDerivativesParameters));
+                addInPlace(gradientAtTrustRegionCenter, gradientUpdate);
             }
 
             // Calculate the parameters of the least Frobenius norm interpolant to
@@ -2003,6 +1990,13 @@ public class BOBYQAOptimizer
             for (int k=0; k<thiz.getRowDimension(); k++) {
                 thiz.setEntry(k, i,thiz.getEntry(k, i) - subtractValues.getEntry(i));
             }
+        }
+        return thiz;
+    }
+
+    private static RealMatrix addToColInPlace(final RealMatrix thiz, final int colIndex, final RealVector subtractValues) {
+        for (int k=0; k<thiz.getRowDimension(); k++) {
+            thiz.setEntry(k, colIndex,thiz.getEntry(k, colIndex) + subtractValues.getEntry(k));
         }
         return thiz;
     }
